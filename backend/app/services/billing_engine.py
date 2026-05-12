@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
@@ -215,3 +216,4 @@ async def preview_billing(
         })
 
     return preview
+

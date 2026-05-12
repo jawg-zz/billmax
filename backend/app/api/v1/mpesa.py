@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -94,3 +95,4 @@ async def mpesa_transactions(
         }
         for tx in txs
     ]
+

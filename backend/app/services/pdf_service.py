@@ -1,3 +1,4 @@
+from __future__ import annotations
 import uuid
 from pathlib import Path
 
@@ -61,3 +62,4 @@ def render_invoice_pdf(
 def render_email_template(template_name: str, **kwargs) -> str:
     template = env.get_template(f"emails/{template_name}")
     return template.render(**kwargs)
+

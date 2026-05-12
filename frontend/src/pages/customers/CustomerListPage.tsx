@@ -1,18 +1,24 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useQuery } from "@tanstack/react-query"
-import { listCustomers, type Customer } from "@/services/customers"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { listCustomers, deleteCustomer, type Customer } from "@/services/customers"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { DataTable, type Column } from "@/components/shared/DataTable"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Eye, Search } from "lucide-react"
+import { Plus, Eye, Search, Trash2 } from "lucide-react"
 
 export function CustomerListPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteCustomer(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customers"] }),
+  })
 
   const { data, isLoading } = useQuery({ queryKey: ["customers"], queryFn: () => listCustomers() })
 
@@ -45,6 +51,9 @@ export function CustomerListPage() {
           </Button>
           <Button variant="ghost" size="icon" onClick={() => navigate(`/customers/${c.id}/edit`)} title="Edit">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          </Button>
+          <Button variant="ghost" size="icon" title="Delete" onClick={() => { if (confirm("Delete this customer?")) deleteMut.mutate(c.id) }}>
+            <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
       ),

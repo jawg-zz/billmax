@@ -14,6 +14,8 @@ import { MpesaPage } from "@/pages/mpesa/MpesaPage"
 import { CustomerDetailPage } from "@/pages/customers/CustomerDetailPage"
 import { TicketListPage } from "@/pages/tickets/TicketListPage"
 import { TicketDetailPage } from "@/pages/tickets/TicketDetailPage"
+import { SubscriptionDetailPage } from "@/pages/subscriptions/SubscriptionDetailPage"
+import { UsersPage } from "@/pages/users/UsersPage"
 import type { ReactNode } from "react"
 
 const queryClient = new QueryClient()
@@ -44,6 +46,8 @@ function AppRoutes() {
         <Route path="/customers/:id" element={<CustomerDetailPage />} />
         <Route path="/tickets" element={<TicketListPage />} />
         <Route path="/tickets/:id" element={<TicketDetailPage />} />
+        <Route path="/subscriptions/:id" element={<SubscriptionDetailPage />} />
+        <Route path="/users" element={<UsersPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

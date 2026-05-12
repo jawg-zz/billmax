@@ -1,5 +1,6 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { StatsCard } from "@/components/dashboard/StatsCard"
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed"
 import { RevenueChart } from "@/components/dashboard/RevenueChart"
@@ -10,7 +11,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import api from "@/services/api"
 import {
   Users, Radio, Receipt, Activity, AlertTriangle,
-  TrendingUp, Wifi, Play, UserPlus,
+  TrendingUp, Wifi, Play, UserPlus, Loader2,
 } from "lucide-react"
 
 interface Stats {
@@ -32,6 +33,7 @@ interface Stats {
 
 export function DashboardPage() {
   const navigate = useNavigate()
+  const [billingRunning, setBillingRunning] = useState(false)
 
   const { data: stats } = useQuery<Stats>({
     queryKey: ["dashboard"],
@@ -119,8 +121,11 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="justify-start h-auto py-3" onClick={() => navigate("/subscriptions")}>
-                <Play className="h-4 w-4 mr-2 text-green-600" />Run Billing
+              <Button variant="outline" className="justify-start h-auto py-3" disabled={billingRunning} onClick={async () => {
+                setBillingRunning(true); try { await api.post("/billing/run"); window.location.reload() } catch {} finally { setBillingRunning(false) }
+              }}>
+                {billingRunning ? <Loader2 className="h-4 w-4 mr-2 animate-spin text-green-600" /> : <Play className="h-4 w-4 mr-2 text-green-600" />}
+                {billingRunning ? "Running..." : "Run Billing"}
               </Button>
               <Button variant="outline" className="justify-start h-auto py-3" onClick={() => navigate("/invoices")}>
                 <AlertTriangle className="h-4 w-4 mr-2 text-orange-600" />Overdue

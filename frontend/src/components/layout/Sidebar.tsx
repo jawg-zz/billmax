@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Users, Radio, Receipt,
-  Wifi, Phone, Ticket,
+  Wifi, Phone, Ticket, Shield,
 } from "lucide-react"
 
 const navItems = [
@@ -13,6 +13,7 @@ const navItems = [
   { to: "/invoices", label: "Invoices", icon: Receipt, roles: ["admin", "billing"] },
   { to: "/mpesa", label: "M-Pesa", icon: Phone, roles: ["admin", "billing"] },
   { to: "/tickets", label: "Tickets", icon: Ticket, roles: ["admin", "support"] },
+  { to: "/users", label: "Users", icon: Shield, roles: ["admin"] },
 ]
 
 export function Sidebar() {

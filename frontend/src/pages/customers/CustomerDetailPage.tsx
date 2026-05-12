@@ -1,6 +1,7 @@
+import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useQuery } from "@tanstack/react-query"
-import { getCustomer } from "@/services/customers"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { getCustomer, updateCustomer } from "@/services/customers"
 import { listInvoices, type Invoice } from "@/services/invoices"
 import { listSubscriptions, type Subscription } from "@/services/subscriptions"
 import { listTickets } from "@/services/tickets"
@@ -10,6 +11,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { DataTable, type Column } from "@/components/shared/DataTable"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Select } from "@/components/ui/select"
 import { ArrowLeft, Mail, Phone, MapPin, CreditCard, UserCheck, Pencil, Calendar } from "lucide-react"
 
 const invoiceCols: Column<Invoice>[] = [
@@ -38,6 +40,12 @@ const mpesaCols: Column<MpesaTransaction>[] = [
 export function CustomerDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
+  const statusMut = useMutation({
+    mutationFn: (status: string) => updateCustomer(id!, { status }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customer", id] }),
+  })
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ["customer", id],
@@ -119,7 +127,17 @@ export function CustomerDetailPage() {
             <UserCheck className="h-4 w-4 text-muted-foreground" />
             <CardTitle className="text-sm font-medium">Status</CardTitle>
           </CardHeader>
-          <CardContent><StatusBadge status={customer.status} /></CardContent>
+          <CardContent>
+            <Select
+              options={[
+                { value: "active", label: "Active" },
+                { value: "suspended", label: "Suspended" },
+                { value: "terminated", label: "Terminated" },
+              ]}
+              value={customer.status}
+              onChange={(e) => statusMut.mutate(e.target.value)}
+            />
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center gap-2 pb-2">

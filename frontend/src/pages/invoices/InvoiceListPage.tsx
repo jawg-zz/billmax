@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { listInvoices, sendInvoice, recordPayment, type Invoice } from "@/services/invoices"
+import { listCustomers } from "@/services/customers"
 import { initiateStkPush } from "@/services/mpesa"
 import { PdfViewer } from "@/components/shared/PdfViewer"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -100,23 +101,36 @@ function InvoiceActions({ invoice }: { invoice: Invoice }) {
   )
 }
 
-const columns: Column<Invoice>[] = [
-  { key: "invoice_number", header: "Invoice #" },
-  { key: "customer_id", header: "Customer" },
-  { key: "total", header: "Total (KES)", cell: (i) => i.total.toLocaleString() },
-  { key: "balance_due", header: "Balance", cell: (i) => i.balance_due.toLocaleString() },
-  { key: "due_date", header: "Due Date" },
-  { key: "status", header: "Status", cell: (i) => <StatusBadge status={i.status} /> },
-  { key: "actions", header: "", cell: (i) => <InvoiceActions invoice={i} /> },
-]
-
 export function InvoiceListPage() {
-  const { data, isLoading } = useQuery({ queryKey: ["invoices"], queryFn: () => listInvoices() })
+  const navigate = useNavigate()
+  const { data: invoices, isLoading } = useQuery({ queryKey: ["invoices"], queryFn: () => listInvoices() })
+  const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: () => listCustomers() })
+  const custMap = new Map(customers?.map((c) => [c.id, c]))
+
+  const columns: Column<Invoice>[] = [
+    { key: "invoice_number", header: "Invoice #" },
+    {
+      key: "customer", header: "Customer",
+      cell: (i) => {
+        const c = custMap.get(i.customer_id)
+        return c ? (
+          <button className="text-primary hover:underline" onClick={() => navigate(`/customers/${c.id}`)}>
+            {c.first_name} {c.last_name}
+          </button>
+        ) : i.customer_id.slice(0, 8)
+      },
+    },
+    { key: "total", header: "Total (KES)", cell: (i) => i.total.toLocaleString() },
+    { key: "balance_due", header: "Balance", cell: (i) => i.balance_due.toLocaleString() },
+    { key: "due_date", header: "Due Date" },
+    { key: "status", header: "Status", cell: (i) => <StatusBadge status={i.status} /> },
+    { key: "actions", header: "", cell: (i) => <InvoiceActions invoice={i} /> },
+  ]
 
   return (
     <div>
       <PageHeader title="Invoices" description="Customer billing records" />
-      <DataTable columns={columns} data={data ?? []} loading={isLoading} />
+      <DataTable columns={columns} data={invoices ?? []} loading={isLoading} />
     </div>
   )
 }

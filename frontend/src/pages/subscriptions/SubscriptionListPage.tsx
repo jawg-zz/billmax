@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { listSubscriptions, createSubscription, type Subscription, type SubscriptionCreate } from "@/services/subscriptions"
 import { listPlans } from "@/services/plans"
@@ -11,9 +12,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Plus, Wifi, WifiOff, RefreshCw, Zap } from "lucide-react"
+import { Plus, Wifi, WifiOff, RefreshCw, Zap, ExternalLink } from "lucide-react"
 
 export function SubscriptionListPage() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [speedSub, setSpeedSub] = useState<Subscription | null>(null)
   const [newPlanId, setNewPlanId] = useState("")
@@ -46,9 +48,10 @@ export function SubscriptionListPage() {
   const columns: Column<Subscription>[] = [
     {
       key: "customer", header: "Customer",
-      cell: (s) => custMap.get(s.customer_id)?.first_name
-        ? `${custMap.get(s.customer_id)!.first_name} ${custMap.get(s.customer_id)!.last_name}`
-        : s.customer_id.slice(0, 8),
+      cell: (s) => {
+        const c = custMap.get(s.customer_id)
+        return c ? `${c.first_name} ${c.last_name}` : s.customer_id.slice(0, 8)
+      },
     },
     {
       key: "plan", header: "Plan",
@@ -64,6 +67,9 @@ export function SubscriptionListPage() {
       key: "actions", header: "",
       cell: (s) => (
         <div className="flex gap-1">
+          <Button variant="ghost" size="icon" title="View Details" onClick={() => navigate(`/subscriptions/${s.id}`)}>
+            <ExternalLink className="h-4 w-4" />
+          </Button>
           {!s.provisioned && (
             <Button variant="ghost" size="icon" title="Provision" onClick={() => provisionMut.mutate(s.id)} disabled={provisionMut.isPending}>
               <Wifi className="h-4 w-4 text-green-600" />

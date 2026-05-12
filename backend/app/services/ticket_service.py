@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import uuid
 from datetime import datetime
 
@@ -100,7 +98,7 @@ class TicketService:
 
     async def get_comments(
         self, ticket_id: uuid.UUID, include_internal: bool = False
-    ) -> list[TicketComment]:
+    ) -> "list[TicketComment]":
         query = select(TicketComment).where(
             TicketComment.ticket_id == ticket_id
         )

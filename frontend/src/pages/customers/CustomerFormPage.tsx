@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { createCustomer, updateCustomer, type CustomerCreate } from "@/services/customers"
+import { useQuery } from "@tanstack/react-query"
+import { createCustomer, updateCustomer, getCustomer, type CustomerCreate } from "@/services/customers"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,6 +14,28 @@ export function CustomerFormPage() {
   const [form, setForm] = useState<CustomerCreate>({ first_name: "", last_name: "", phone: "" })
   const [saving, setSaving] = useState(false)
 
+  const { data } = useQuery({
+    queryKey: ["customer", id],
+    queryFn: () => getCustomer(id!),
+    enabled: isEdit,
+  })
+
+  useEffect(() => {
+    if (data) {
+      setForm({
+        first_name: data.first_name,
+        last_name: data.last_name,
+        phone: data.phone,
+        email: data.email ?? undefined,
+        id_number: data.id_number ?? undefined,
+        kra_pin: data.kra_pin ?? undefined,
+        mpesa_phone: data.mpesa_phone ?? undefined,
+        physical_address: data.physical_address ?? undefined,
+        service_address: data.service_address ?? undefined,
+      })
+    }
+  }, [data])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
@@ -22,7 +45,7 @@ export function CustomerFormPage() {
       } else {
         await createCustomer(form)
       }
-      navigate("/customers")
+      navigate(isEdit ? `/customers/${id}` : "/customers")
     } finally {
       setSaving(false)
     }
@@ -69,9 +92,17 @@ export function CustomerFormPage() {
               <label className="text-sm font-medium">M-Pesa Phone</label>
               <Input value={form.mpesa_phone ?? ""} onChange={(e) => update("mpesa_phone", e.target.value)} placeholder="For STK Push payments" />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Physical Address</label>
+              <Input value={form.physical_address ?? ""} onChange={(e) => update("physical_address", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Service Address</label>
+              <Input value={form.service_address ?? ""} onChange={(e) => update("service_address", e.target.value)} />
+            </div>
             <div className="flex gap-2 pt-4">
               <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
-              <Button type="button" variant="outline" onClick={() => navigate("/customers")}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/customers/${id}` : "/customers")}>Cancel</Button>
             </div>
           </form>
         </CardContent>

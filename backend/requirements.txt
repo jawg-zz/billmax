@@ -8,6 +8,7 @@ pydantic>=2.9.0
 pydantic-settings>=2.5.0
 fastapi-users[sqlalchemy]>=12.1,<13
 python-jose[cryptography]>=3.3.0
+setuptools>=75.0
 passlib[bcrypt]>=1.7.4
 bcrypt>=3.2,<4.1
 redis>=5.1.0

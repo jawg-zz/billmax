@@ -1,4 +1,3 @@
-from __future__ import annotations
 import uuid
 from datetime import date, datetime
 
@@ -259,4 +258,3 @@ class InvoiceService:
             )
         )
         return float(result.scalar() or 0)
-

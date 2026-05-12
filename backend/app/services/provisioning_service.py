@@ -1,4 +1,3 @@
-from __future__ import annotations
 import uuid
 
 from sqlalchemy import select
@@ -290,4 +289,3 @@ async def get_provisioning_logs(
     query = query.order_by(ProvisioningLog.created_at.desc()).offset(skip).limit(limit)
     result = await db.execute(query)
     return list(result.scalars().all())
-

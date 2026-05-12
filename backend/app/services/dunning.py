@@ -1,4 +1,3 @@
-from __future__ import annotations
 from datetime import date, datetime
 
 from sqlalchemy import select
@@ -109,4 +108,3 @@ async def process_overdue(
 
     await db.commit()
     return actions
-

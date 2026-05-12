@@ -1,4 +1,3 @@
-from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -104,4 +103,3 @@ async def add_comment(
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
     return await service.add_comment(ticket_id, data, user_id=user.id)
-

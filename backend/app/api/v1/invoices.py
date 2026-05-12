@@ -1,4 +1,3 @@
-from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
@@ -154,4 +153,3 @@ async def download_invoice_pdf(
             "Content-Disposition": f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
         },
     )
-

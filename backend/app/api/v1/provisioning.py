@@ -1,4 +1,3 @@
-from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -105,4 +104,3 @@ async def api_provisioning_logs(
         }
         for log in logs
     ]
-

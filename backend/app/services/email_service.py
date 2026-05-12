@@ -1,4 +1,3 @@
-from __future__ import annotations
 import smtplib
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
@@ -38,4 +37,3 @@ async def send_email(
         return True
     except Exception:
         return False
-

@@ -1,4 +1,3 @@
-from __future__ import annotations
 import uuid
 
 from sqlalchemy import select
@@ -291,4 +290,3 @@ async def reconcile_pending(db: AsyncSession) -> list[dict]:
                 results.append({"id": str(tx.id), "status": "failed"})
     await db.commit()
     return results
-

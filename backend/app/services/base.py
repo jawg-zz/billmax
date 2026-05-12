@@ -1,4 +1,3 @@
-from __future__ import annotations
 import uuid
 from typing import Any, Generic, TypeVar
 
@@ -74,4 +73,3 @@ class BaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             )
         )
         return result.scalar() or 0
-

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { listSubscriptions, type Subscription } from "@/services/subscriptions"
+import { listSubscriptions, createSubscription, type Subscription, type SubscriptionCreate } from "@/services/subscriptions"
 import { listPlans } from "@/services/plans"
 import { listCustomers } from "@/services/customers"
 import { provision, suspend, restore, changeSpeed } from "@/services/provisioning"
@@ -8,14 +8,19 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { DataTable, type Column } from "@/components/shared/DataTable"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Wifi, WifiOff, RefreshCw, Zap } from "lucide-react"
+import { Plus, Wifi, WifiOff, RefreshCw, Zap } from "lucide-react"
 
 export function SubscriptionListPage() {
   const queryClient = useQueryClient()
   const [speedSub, setSpeedSub] = useState<Subscription | null>(null)
   const [newPlanId, setNewPlanId] = useState("")
+  const [createOpen, setCreateOpen] = useState(false)
+  const [form, setForm] = useState<SubscriptionCreate>({
+    customer_id: "", plan_id: "", next_billing_date: "",
+  })
 
   const { data: subs, isLoading } = useQuery({ queryKey: ["subscriptions"], queryFn: () => listSubscriptions() })
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: () => listCustomers() })
@@ -32,6 +37,10 @@ export function SubscriptionListPage() {
   const speedMut = useMutation({
     mutationFn: () => changeSpeed(speedSub!.id, newPlanId),
     onSuccess: () => { invalidate(); setSpeedSub(null); setNewPlanId("") },
+  })
+  const createMut = useMutation({
+    mutationFn: () => createSubscription(form),
+    onSuccess: () => { invalidate(); setCreateOpen(false); setForm({ customer_id: "", plan_id: "", next_billing_date: "" }) },
   })
 
   const columns: Column<Subscription>[] = [
@@ -82,7 +91,13 @@ export function SubscriptionListPage() {
 
   return (
     <div>
-      <PageHeader title="Subscriptions" description="Customer plan assignments. Provision, suspend, or change speeds." />
+      <PageHeader
+        title="Subscriptions"
+        description="Customer plan assignments. Provision, suspend, or change speeds."
+        actions={
+          <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-2" />New Subscription</Button>
+        }
+      />
       <DataTable columns={columns} data={subs ?? []} loading={isLoading} />
 
       <Dialog open={!!speedSub} onOpenChange={(o) => { if (!o) setSpeedSub(null) }}>
@@ -100,6 +115,39 @@ export function SubscriptionListPage() {
               />
             </div>
             <Button type="submit" disabled={speedMut.isPending}>Change Speed</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>New Subscription</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); createMut.mutate() }} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Customer</label>
+              <Select
+                options={(customers ?? []).map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name} (${c.phone})` }))}
+                value={form.customer_id}
+                onChange={(e) => setForm({ ...form, customer_id: e.target.value })}
+                placeholder="Select customer"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Plan</label>
+              <Select
+                options={(plans ?? []).map((p) => ({ value: p.id, label: `${p.name} — KES ${p.price}/mo` }))}
+                value={form.plan_id}
+                onChange={(e) => setForm({ ...form, plan_id: e.target.value })}
+                placeholder="Select plan"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Next Billing Date</label>
+              <Input type="date" value={form.next_billing_date} onChange={(e) => setForm({ ...form, next_billing_date: e.target.value })} required />
+            </div>
+            <Button type="submit" disabled={createMut.isPending}>Create Subscription</Button>
           </form>
         </DialogContent>
       </Dialog>

@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { listInvoices, sendInvoice, recordPayment, type Invoice } from "@/services/invoices"
-import { listCustomers, type Customer } from "@/services/customers"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { DataTable, type Column } from "@/components/shared/DataTable"
 import { StatusBadge } from "@/components/shared/StatusBadge"

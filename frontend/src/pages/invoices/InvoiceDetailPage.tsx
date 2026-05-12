@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { getInvoice } from "@/services/invoices"
-import { getCustomer, type Customer } from "@/services/customers"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"

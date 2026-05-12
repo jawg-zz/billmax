@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/shared/PageHeader"
 import api from "@/services/api"
-import { Users, Radio, Receipt, TrendingUp, Activity, AlertTriangle } from "lucide-react"
+import { Users, Radio, Receipt, Activity, AlertTriangle } from "lucide-react"
 
 interface DashboardStats {
   total_customers: number

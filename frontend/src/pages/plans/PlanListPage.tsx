@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { listPlans, createPlan, deletePlan, type Plan, type PlanCreate } from "@/services/plans"
+import { listPlans, createPlan, type Plan, type PlanCreate } from "@/services/plans"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { DataTable, type Column } from "@/components/shared/DataTable"
 import { Button } from "@/components/ui/button"
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus } from "lucide-react"
 import { PLAN_TYPES, BILLING_CYCLES } from "@/lib/constants"
 
 const columns: Column<Plan>[] = [
@@ -35,10 +35,7 @@ export function PlanListPage() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["plans"] }); setOpen(false); setForm({ name: "", type: "fiber", download_speed_mbps: 10, upload_speed_mbps: 10, price: 0 }) },
   })
 
-  const deleteMut = useMutation({
-    mutationFn: (id: string) => deletePlan(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["plans"] }),
-  })
+
 
   return (
     <div>

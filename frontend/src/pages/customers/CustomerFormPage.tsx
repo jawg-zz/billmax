@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { useQuery } from "@tanstack/react-query"
-import { createCustomer, updateCustomer, getCustomer, type CustomerCreate } from "@/services/customers"
+import { createCustomer, updateCustomer, type CustomerCreate } from "@/services/customers"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,12 +12,6 @@ export function CustomerFormPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState<CustomerCreate>({ first_name: "", last_name: "", phone: "" })
   const [saving, setSaving] = useState(false)
-
-  const { data } = useQuery({
-    queryKey: ["customer", id],
-    queryFn: () => getCustomer(id!),
-    enabled: isEdit,
-  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

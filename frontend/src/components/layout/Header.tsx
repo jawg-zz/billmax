@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
-import { LogOut, User } from "lucide-react"
+import { LogOut } from "lucide-react"
 
 export function Header() {
   const { user, logout } = useAuth()

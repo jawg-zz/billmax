@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getTicket, getComments, addComment, updateTicket, type TicketComment } from "@/services/tickets"
+import { getTicket, getComments, addComment, updateTicket } from "@/services/tickets"
 import { getCustomer } from "@/services/customers"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatusBadge } from "@/components/shared/StatusBadge"

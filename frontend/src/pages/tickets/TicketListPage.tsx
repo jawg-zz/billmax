@@ -1,8 +1,7 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { listTickets, createTicket, type Ticket, type TicketCreate } from "@/services/tickets"
-import { listCustomers, type Customer } from "@/services/customers"
+import { listCustomers } from "@/services/customers"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { DataTable, type Column } from "@/components/shared/DataTable"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -28,7 +27,6 @@ const columns: Column<Ticket>[] = [
 ]
 
 export function TicketListPage() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [filter, setFilter] = useState("")

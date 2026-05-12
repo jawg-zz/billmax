@@ -55,3 +55,13 @@ export async function recordPayment(
   const res = await api.post(`/invoices/${id}/payment`, null, { params: data })
   return res.data
 }
+
+export async function downloadPdf(id: string) {
+  const res = await api.get(`/invoices/${id}/pdf`, { responseType: "blob" })
+  const url = URL.createObjectURL(res.data)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = `invoice-${id.slice(0, 8)}.pdf`
+  a.click()
+  URL.revokeObjectURL(url)
+}

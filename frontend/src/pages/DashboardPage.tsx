@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { StatsCard } from "@/components/dashboard/StatsCard"
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed"
 import { RevenueChart } from "@/components/dashboard/RevenueChart"

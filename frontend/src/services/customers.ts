@@ -26,6 +26,7 @@ export interface CustomerCreate {
   mpesa_phone?: string
   physical_address?: string
   service_address?: string
+  status?: string
 }
 
 export async function listCustomers(params?: { skip?: number; limit?: number }) {

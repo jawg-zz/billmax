@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { margin: 20mm 15mm; }
+  body { font-family: 'DejaVu Sans', sans-serif; font-size: 10pt; color: #333; }
+  .header { text-align: center; margin-bottom: 20px; }
+  .header h1 { font-size: 18pt; margin: 0; color: #1a56db; }
+  .header p { margin: 2px 0; font-size: 9pt; }
+  .title { text-align: center; font-size: 14pt; font-weight: bold; margin: 15px 0; }
+  .details { width: 100%; margin-bottom: 15px; }
+  .details td { vertical-align: top; padding: 3px 0; }
+  .details td:first-child { width: 50%; }
+  .label { font-weight: bold; font-size: 9pt; color: #666; }
+  .value { font-size: 10pt; }
+  table.items { width: 100%; border-collapse: collapse; margin: 15px 0; }
+  table.items th { background: #1a56db; color: white; padding: 8px 6px; text-align: left; font-size: 9pt; }
+  table.items td { padding: 6px; border-bottom: 1px solid #ddd; font-size: 9pt; }
+  table.items td.amount { text-align: right; }
+  .totals { width: 100%; margin-top: 10px; }
+  .totals td { padding: 4px 6px; }
+  .totals td:first-child { text-align: right; width: 80%; }
+  .totals td:last-child { text-align: right; width: 20%; font-weight: bold; }
+  .totals .grand-total { font-size: 12pt; color: #1a56db; border-top: 2px solid #1a56db; }
+  .footer { margin-top: 30px; font-size: 8pt; color: #999; text-align: center; }
+  .status-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 3px;
+    font-size: 9pt; font-weight: bold; text-transform: uppercase;
+  }
+  .status-paid { background: #d4edda; color: #155724; }
+  .status-overdue { background: #f8d7da; color: #721c24; }
+  .status-draft { background: #fff3cd; color: #856404; }
+  .status-sent { background: #cce5ff; color: #004085; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>{{ org_name }}</h1>
+  <p>{{ org_address or '' }}</p>
+  <p>KRA PIN: {{ org_kra_pin or '—' }}</p>
+  <p>{{ org_phone or '' }} | {{ org_email or '' }}</p>
+</div>
+
+<div class="title">TAX INVOICE</div>
+
+<table class="details">
+  <tr>
+    <td>
+      <div class="label">Invoice No.</div>
+      <div class="value">{{ invoice_number }}</div>
+      <div class="label" style="margin-top:8px;">Issue Date</div>
+      <div class="value">{{ issue_date }}</div>
+      <div class="label" style="margin-top:8px;">Due Date</div>
+      <div class="value">{{ due_date }}</div>
+    </td>
+    <td>
+      <div class="label">Bill To</div>
+      <div class="value">{{ customer_name }}</div>
+      <div class="value">{{ customer_phone }}</div>
+      <div class="value">{{ customer_email or '' }}</div>
+      <div class="value">KRA PIN: {{ customer_kra_pin or '—' }}</div>
+    </td>
+  </tr>
+</table>
+
+<table class="items">
+  <tr>
+    <th style="width:55%">Description</th>
+    <th style="width:10%">Qty</th>
+    <th style="width:17%">Unit Price (KES)</th>
+    <th style="width:18%">Total (KES)</th>
+  </tr>
+  {% for item in items %}
+  <tr>
+    <td>{{ item.description }}</td>
+    <td>{{ item.quantity }}</td>
+    <td class="amount">{{ "{:,.2f}".format(item.unit_price) }}</td>
+    <td class="amount">{{ "{:,.2f}".format(item.total) }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<table class="totals">
+  <tr><td>Subtotal</td><td>{{ "{:,.2f}".format(subtotal) }}</td></tr>
+  <tr><td>VAT (16%)</td><td>{{ "{:,.2f}".format(vat_amount) }}</td></tr>
+  <tr class="grand-total"><td><strong>Total Due</strong></td><td><strong>{{ "{:,.2f}".format(total) }}</strong></td></tr>
+  {% if balance_due != total %}
+  <tr><td>Balance Due</td><td>{{ "{:,.2f}".format(balance_due) }}</td></tr>
+  {% endif %}
+</table>
+
+<div style="margin-top:15px;">
+  Status: <span class="status-badge status-{{ status }}">{{ status }}</span>
+</div>
+
+{% if notes %}
+<div style="margin-top:15px; padding:10px; background:#f9f9f9; font-size:9pt;">
+  <strong>Notes:</strong><br>{{ notes }}
+</div>
+{% endif %}
+
+<div class="footer">
+  BillMax ISP Billing System | Payment via M-Pesa Paybill | E&OE
+  {% if kra_etims_code %}
+  <br>e-TIMS Code: {{ kra_etims_code }}
+  {% endif %}
+</div>
+</body>
+</html>

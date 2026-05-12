@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;padding:20px;">
+  <h2 style="color:#1a56db;">Invoice {{ invoice_number }}</h2>
+  <p>Dear {{ customer_name }},</p>
+  <p>Please find attached your invoice for <strong>KES {{ "{:,.2f}".format(total) }}</strong> due on <strong>{{ due_date }}</strong>.</p>
+
+  <table style="width:100%;border-collapse:collapse;margin:15px 0;">
+    <tr style="background:#f3f4f6;">
+      <th style="text-align:left;padding:8px;">Description</th>
+      <th style="text-align:right;padding:8px;">Amount</th>
+    </tr>
+    {% for item in items %}
+    <tr>
+      <td style="padding:6px;border-bottom:1px solid #ddd;">{{ item.description }}</td>
+      <td style="text-align:right;padding:6px;border-bottom:1px solid #ddd;">KES {{ "{:,.2f}".format(item.total) }}</td>
+    </tr>
+    {% endfor %}
+    <tr style="font-weight:bold;">
+      <td style="padding:6px;">Total Due</td>
+      <td style="text-align:right;padding:6px;">KES {{ "{:,.2f}".format(total) }}</td>
+    </tr>
+  </table>
+
+  <p>You can pay via <strong>M-Pesa</strong> using our Paybill number.</p>
+  <p style="color:#666;font-size:12px;">If you've already paid, please ignore this email.</p>
+  <p>Regards,<br><strong>{{ org_name }}</strong></p>
+</body>
+</html>

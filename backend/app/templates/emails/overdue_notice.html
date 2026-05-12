@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;padding:20px;">
+  <div style="background:#fef2f2;border:1px solid #fecaca;padding:15px;margin-bottom:20px;">
+    <h2 style="color:#dc2626;margin:0;">Overdue Notice</h2>
+  </div>
+  <p>Dear {{ customer_name }},</p>
+  <p>Your invoice <strong>{{ invoice_number }}</strong> for <strong>KES {{ "{:,.2f}".format(total) }}</strong> was due on <strong>{{ due_date }}</strong> and is now <strong>{{ days_overdue }} days overdue</strong>.</p>
+
+  {% if days_overdue >= 14 %}
+  <p style="color:#dc2626;"><strong>Final Notice:</strong> Your internet service will be suspended within 48 hours if payment is not received.</p>
+  {% elif days_overdue >= 7 %}
+  <p style="color:#ea580c;"><strong>Reminder:</strong> Please pay immediately to avoid service interruption.</p>
+  {% else %}
+  <p>Please arrange payment at your earliest convenience.</p>
+  {% endif %}
+
+  <p>Regards,<br><strong>{{ org_name }}</strong></p>
+</body>
+</html>

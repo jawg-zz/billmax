@@ -31,16 +31,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const res = await authService.login({ username: email, password })
     localStorage.setItem("access_token", res.access_token)
-    if (res.refresh_token) {
-      localStorage.setItem("refresh_token", res.refresh_token)
-    }
     const me = await authService.getMe()
     setUser(me)
   }
 
   const logout = () => {
     localStorage.removeItem("access_token")
-    localStorage.removeItem("refresh_token")
     setUser(null)
   }
 

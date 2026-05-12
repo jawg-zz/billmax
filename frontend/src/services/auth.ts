@@ -7,7 +7,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   access_token: string
-  refresh_token: string
+  token_type: string
 }
 
 export interface User {
@@ -30,7 +30,7 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function getMe(): Promise<User> {
-  const res = await api.get("/auth/me")
+  const res = await api.get("/users/me")
   return res.data
 }
 

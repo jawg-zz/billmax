@@ -1,8 +1,9 @@
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getInvoice, sendInvoice, downloadPdf } from "@/services/invoices"
+import { getInvoice, sendInvoice } from "@/services/invoices"
 import { initiateStkPush } from "@/services/mpesa"
+import { PdfViewer } from "@/components/shared/PdfViewer"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
@@ -56,9 +57,11 @@ export function InvoiceDetailPage() {
               </>
             )}
             {invoice && (
-              <Button variant="outline" size="sm" onClick={() => downloadPdf(id!)}>
-                <Download className="h-4 w-4 mr-2" />PDF
-              </Button>
+              <PdfViewer invoiceId={id!} invoiceNumber={invoice.invoice_number}>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />PDF
+                </Button>
+              </PdfViewer>
             )}
             <Button variant="outline" onClick={() => navigate("/invoices")}>
               <ArrowLeft className="h-4 w-4 mr-2" />Back

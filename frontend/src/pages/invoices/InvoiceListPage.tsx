@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import { listInvoices, sendInvoice, recordPayment, downloadPdf, type Invoice } from "@/services/invoices"
+import { listInvoices, sendInvoice, recordPayment, type Invoice } from "@/services/invoices"
 import { initiateStkPush } from "@/services/mpesa"
+import { PdfViewer } from "@/components/shared/PdfViewer"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { DataTable, type Column } from "@/components/shared/DataTable"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -39,9 +40,11 @@ function InvoiceActions({ invoice }: { invoice: Invoice }) {
       <Button variant="ghost" size="icon" title="View" onClick={() => navigate(`/invoices/${invoice.id}`)}>
         <Eye className="h-4 w-4" />
       </Button>
-      <Button variant="ghost" size="icon" title="Download PDF" onClick={() => downloadPdf(invoice.id)}>
-        <Download className="h-4 w-4" />
-      </Button>
+      <PdfViewer invoiceId={invoice.id} invoiceNumber={invoice.invoice_number}>
+        <Button variant="ghost" size="icon" title="View PDF">
+          <Download className="h-4 w-4" />
+        </Button>
+      </PdfViewer>
       {invoice.status !== "paid" && (
         <>
           <Button variant="ghost" size="icon" title="Email Invoice" onClick={() => sendMut.mutate()}>

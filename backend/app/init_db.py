@@ -36,14 +36,23 @@ async def needs_seed() -> bool:
         return result.scalar_one_or_none() is None
 
 
+async def column_exists(conn, table: str, column: str) -> bool:
+    result = await conn.execute(
+        text("SELECT column_name FROM information_schema.columns WHERE table_name=:t AND column_name=:c"),
+        {"t": table, "c": column},
+    )
+    return result.scalar() is not None
+
+
 async def run_migrations():
     async with engine.begin() as conn:
-        result = await conn.execute(
-            text("SELECT column_name FROM information_schema.columns WHERE table_name='customers' AND column_name='portal_password'")
-        )
-        if result.rowcount == 0:
+        if not await column_exists(conn, "customers", "portal_password"):
             await conn.execute(text("ALTER TABLE customers ADD COLUMN portal_password VARCHAR(255)"))
-            print("Added portal_password column to customers")
+            print("  + Added portal_password column to customers")
+
+        if not await column_exists(conn, "invoices", "kra_etims_code"):
+            await conn.execute(text("ALTER TABLE invoices ADD COLUMN kra_etims_code VARCHAR(100)"))
+            print("  + Added kra_etims_code column to invoices")
 
 
 async def main():

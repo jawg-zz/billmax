@@ -9,6 +9,7 @@ from app.api.v1.tickets import router as tickets_router
 from app.api.v1.mpesa import router as mpesa_router
 from app.api.v1.plans import router as plans_router
 from app.api.v1.provisioning import router as provisioning_router
+from app.api.v1.reports import router as reports_router
 from app.api.v1.subscriptions import router as subscriptions_router
 
 api_router = APIRouter(prefix="/api/v1")
@@ -22,4 +23,5 @@ api_router.include_router(invoices_router)
 api_router.include_router(mpesa_router)
 api_router.include_router(provisioning_router)
 api_router.include_router(tickets_router)
+api_router.include_router(reports_router)
 api_router.include_router(dashboard_router)

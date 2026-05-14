@@ -16,6 +16,7 @@ import { TicketListPage } from "@/pages/tickets/TicketListPage"
 import { TicketDetailPage } from "@/pages/tickets/TicketDetailPage"
 import { SubscriptionDetailPage } from "@/pages/subscriptions/SubscriptionDetailPage"
 import { UsersPage } from "@/pages/users/UsersPage"
+import { ReportsPage } from "@/pages/reports/ReportsPage"
 import type { ReactNode } from "react"
 
 const queryClient = new QueryClient()
@@ -48,6 +49,7 @@ function AppRoutes() {
         <Route path="/tickets/:id" element={<TicketDetailPage />} />
         <Route path="/subscriptions/:id" element={<SubscriptionDetailPage />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

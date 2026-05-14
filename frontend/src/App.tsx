@@ -17,6 +17,10 @@ import { TicketDetailPage } from "@/pages/tickets/TicketDetailPage"
 import { SubscriptionDetailPage } from "@/pages/subscriptions/SubscriptionDetailPage"
 import { UsersPage } from "@/pages/users/UsersPage"
 import { ReportsPage } from "@/pages/reports/ReportsPage"
+import { PortalLoginPage } from "@/pages/portal/PortalLoginPage"
+import { PortalDashboardPage } from "@/pages/portal/PortalDashboardPage"
+import { PortalInvoicesPage } from "@/pages/portal/PortalInvoicesPage"
+import { PortalTicketsPage } from "@/pages/portal/PortalTicketsPage"
 import type { ReactNode } from "react"
 
 const queryClient = new QueryClient()
@@ -51,6 +55,10 @@ function AppRoutes() {
         <Route path="/users" element={<UsersPage />} />
         <Route path="/reports" element={<ReportsPage />} />
       </Route>
+      <Route path="/portal/login" element={<PortalLoginPage />} />
+      <Route path="/portal" element={<PortalDashboardPage />} />
+      <Route path="/portal/invoices" element={<PortalInvoicesPage />} />
+      <Route path="/portal/tickets" element={<PortalTicketsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

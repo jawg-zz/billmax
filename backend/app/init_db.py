@@ -36,9 +36,20 @@ async def needs_seed() -> bool:
         return result.scalar_one_or_none() is None
 
 
+async def run_migrations():
+    async with engine.begin() as conn:
+        result = await conn.execute(
+            text("SELECT column_name FROM information_schema.columns WHERE table_name='customers' AND column_name='portal_password'")
+        )
+        if result.rowcount == 0:
+            await conn.execute(text("ALTER TABLE customers ADD COLUMN portal_password VARCHAR(255)"))
+            print("Added portal_password column to customers")
+
+
 async def main():
     await wait_for_db()
     await create_tables()
+    await run_migrations()
 
     if await needs_seed():
         print("First deploy — seeding demo data...")

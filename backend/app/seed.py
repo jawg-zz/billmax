@@ -74,12 +74,13 @@ async def seed():
             db.add(plan)
         await db.flush()
 
+        portal_pw = hash_password("1234")
         customers_data = [
-            Customer(organization_id=org.id, first_name="John", last_name="Kamau", phone="+254712345678", email="john@example.com", id_number="12345678", status="active"),
-            Customer(organization_id=org.id, first_name="Mary", last_name="Wanjiku", phone="+254723456789", email="mary@example.com", id_number="23456789", status="active"),
-            Customer(organization_id=org.id, first_name="Peter", last_name="Otieno", phone="+254734567890", email="peter@example.com", id_number="34567890", status="active"),
-            Customer(organization_id=org.id, first_name="James", last_name="Kiprop", phone="+254745678901", email="james@example.com", id_number="45678901", status="suspended"),
-            Customer(organization_id=org.id, first_name="Sarah", last_name="Njoki", phone="+254756789012", email="sarah@example.com", id_number="56789012", status="active"),
+            Customer(organization_id=org.id, first_name="John", last_name="Kamau", phone="+254712345678", email="john@example.com", id_number="12345678", status="active", portal_password=portal_pw),
+            Customer(organization_id=org.id, first_name="Mary", last_name="Wanjiku", phone="+254723456789", email="mary@example.com", id_number="23456789", status="active", portal_password=portal_pw),
+            Customer(organization_id=org.id, first_name="Peter", last_name="Otieno", phone="+254734567890", email="peter@example.com", id_number="34567890", status="active", portal_password=portal_pw),
+            Customer(organization_id=org.id, first_name="James", last_name="Kiprop", phone="+254745678901", email="james@example.com", id_number="45678901", status="suspended", portal_password=portal_pw),
+            Customer(organization_id=org.id, first_name="Sarah", last_name="Njoki", phone="+254756789012", email="sarah@example.com", id_number="56789012", status="active", portal_password=portal_pw),
         ]
         for cust in customers_data:
             db.add(cust)

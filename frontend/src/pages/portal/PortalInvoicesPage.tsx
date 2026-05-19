@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { portalInvoices, portalPayInvoice, portalMe, type PortalCustomer } from "@/services/portal"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ArrowLeft, Smartphone, Loader2 } from "lucide-react"
 

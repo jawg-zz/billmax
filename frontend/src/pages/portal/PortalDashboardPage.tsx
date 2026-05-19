@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { LogOut, Wifi, Receipt, Ticket, User, Key, ArrowRight, Activity } from "lucide-react"
+import { LogOut, Wifi, Receipt, Ticket, Key, ArrowRight, Activity } from "lucide-react"
 
 export function PortalDashboardPage() {
   const navigate = useNavigate()

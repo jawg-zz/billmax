@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { getUsageSummary, enforceFup, type UsageSummary } from "@/services/usage"
+import { getUsageSummary, enforceFup } from "@/services/usage"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"

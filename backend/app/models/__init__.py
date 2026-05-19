@@ -11,6 +11,7 @@ from app.models.notification import Notification
 from app.models.audit_log import AuditLog
 from app.models.sequence_number import SequenceNumber
 from app.models.provisioning_log import ProvisioningLog
+from app.models.usage import UsageRecord, UsageAlert
 
 __all__ = [
     "Organization",
@@ -28,4 +29,6 @@ __all__ = [
     "AuditLog",
     "SequenceNumber",
     "ProvisioningLog",
+    "UsageRecord",
+    "UsageAlert",
 ]

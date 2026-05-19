@@ -29,7 +29,7 @@ export interface CustomerCreate {
   status?: string
 }
 
-export async function listCustomers(params?: { skip?: number; limit?: number }) {
+export async function listCustomers(params?: { skip?: number; limit?: number; status?: string }) {
   const res = await api.get("/customers", { params })
   return res.data as Customer[]
 }
@@ -51,4 +51,14 @@ export async function updateCustomer(id: string, data: Partial<CustomerCreate>) 
 
 export async function deleteCustomer(id: string) {
   await api.delete(`/customers/${id}`)
+}
+
+export async function approveCustomer(id: string) {
+  const res = await api.post(`/customers/${id}/approve`)
+  return res.data as Customer
+}
+
+export async function rejectCustomer(id: string) {
+  const res = await api.post(`/customers/${id}/reject`)
+  return res.data as Customer
 }

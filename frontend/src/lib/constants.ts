@@ -7,10 +7,15 @@ export const STATUS_VARIANTS: Record<string, "success" | "warning" | "destructiv
   sent: "secondary",
   draft: "secondary",
   pending: "warning",
+  rejected: "destructive",
   overdue: "destructive",
   suspended: "destructive",
   failed: "destructive",
   cancelled: "destructive",
+  open: "warning",
+  in_progress: "warning",
+  resolved: "success",
+  closed: "secondary",
 }
 
 export const PLAN_TYPES = [

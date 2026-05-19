@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -16,10 +17,13 @@ router = APIRouter(prefix="/customers", tags=["customers"])
 async def list_customers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
+    status: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(AnyStaff),
 ):
     service = CustomerService(db)
+    if status:
+        return await service.list_by_status(user.organization_id, status, skip=skip, limit=limit)
     return await service.list(user.organization_id, skip=skip, limit=limit)
 
 
@@ -52,6 +56,46 @@ async def update_customer(
 ):
     service = CustomerService(db)
     return await service.update(customer_id, data, user.organization_id)
+
+
+@router.post("/{customer_id}/approve")
+async def approve_customer(
+    customer_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(AdminOnly),
+):
+    service = CustomerService(db)
+    customer = await service.get(customer_id, user.organization_id)
+    customer.status = "active"
+
+    from app.models.subscription import Subscription
+    result = await db.execute(
+        select(Subscription).where(
+            Subscription.customer_id == customer_id,
+            Subscription.status == "pending",
+        )
+    )
+    sub = result.scalar_one_or_none()
+    if sub:
+        sub.status = "active"
+
+    await db.commit()
+    await db.refresh(customer)
+    return CustomerRead.model_validate(customer)
+
+
+@router.post("/{customer_id}/reject")
+async def reject_customer(
+    customer_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(AdminOnly),
+):
+    service = CustomerService(db)
+    customer = await service.get(customer_id, user.organization_id)
+    customer.status = "rejected"
+    await db.commit()
+    await db.refresh(customer)
+    return CustomerRead.model_validate(customer)
 
 
 @router.delete("/{customer_id}", status_code=204)

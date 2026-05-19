@@ -30,4 +30,8 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.mpesa.reconcile_mpesa_transactions",
         "schedule": crontab(hour="*/1", minute=30),
     },
+    "enforce-fup": {
+        "task": "app.tasks.usage.enforce_usage_policies",
+        "schedule": crontab(hour="*/4", minute=0),
+    },
 }

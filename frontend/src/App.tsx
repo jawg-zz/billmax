@@ -17,7 +17,9 @@ import { TicketDetailPage } from "@/pages/tickets/TicketDetailPage"
 import { SubscriptionDetailPage } from "@/pages/subscriptions/SubscriptionDetailPage"
 import { UsersPage } from "@/pages/users/UsersPage"
 import { ReportsPage } from "@/pages/reports/ReportsPage"
+import { UsagePage } from "@/pages/UsagePage"
 import { PortalLoginPage } from "@/pages/portal/PortalLoginPage"
+import { PortalRegisterPage } from "@/pages/portal/PortalRegisterPage"
 import { PortalDashboardPage } from "@/pages/portal/PortalDashboardPage"
 import { PortalInvoicesPage } from "@/pages/portal/PortalInvoicesPage"
 import { PortalTicketsPage } from "@/pages/portal/PortalTicketsPage"
@@ -54,8 +56,10 @@ function AppRoutes() {
         <Route path="/subscriptions/:id" element={<SubscriptionDetailPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/usage" element={<UsagePage />} />
       </Route>
       <Route path="/portal/login" element={<PortalLoginPage />} />
+      <Route path="/portal/register" element={<PortalRegisterPage />} />
       <Route path="/portal" element={<PortalDashboardPage />} />
       <Route path="/portal/invoices" element={<PortalInvoicesPage />} />
       <Route path="/portal/tickets" element={<PortalTicketsPage />} />

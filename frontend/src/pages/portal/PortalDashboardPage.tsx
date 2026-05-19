@@ -2,11 +2,12 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { portalMe, portalInvoices, portalSubscription, portalTickets, portalChangePassword, type PortalCustomer } from "@/services/portal"
+import { portalUsage } from "@/services/usage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { LogOut, Wifi, Receipt, Ticket, User, Key, ArrowRight } from "lucide-react"
+import { LogOut, Wifi, Receipt, Ticket, User, Key, ArrowRight, Activity } from "lucide-react"
 
 export function PortalDashboardPage() {
   const navigate = useNavigate()
@@ -30,6 +31,12 @@ export function PortalDashboardPage() {
   const { data: subData } = useQuery({
     queryKey: ["portal-subscription"],
     queryFn: () => portalSubscription(),
+    enabled: !!customer,
+  })
+
+  const { data: usageData } = useQuery({
+    queryKey: ["portal-usage"],
+    queryFn: () => portalUsage(),
     enabled: !!customer,
   })
 
@@ -80,7 +87,7 @@ export function PortalDashboardPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/portal/invoices")}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Invoices</CardTitle>
@@ -101,6 +108,9 @@ export function PortalDashboardPage() {
                 <>
                   <div className="text-sm font-medium">{subscription.plan?.name}</div>
                   <StatusBadge status={subscription.status} />
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {subscription.plan?.download_speed_mbps}/{subscription.plan?.upload_speed_mbps} Mbps
+                  </div>
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">No active subscription</p>
@@ -115,6 +125,39 @@ export function PortalDashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">{openTickets.length}</div>
               <p className="text-xs text-muted-foreground">open tickets</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Data Usage</CardTitle>
+              <Activity className="h-4 w-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              {usageData?.usage ? (
+                <>
+                  <div className="text-2xl font-bold">{usageData.usage.total_gb.toFixed(1)} GB</div>
+                  {usageData.usage.data_cap_gb ? (
+                    <div className="mt-1">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full ${
+                            usageData.usage.usage_percent >= 100 ? "bg-red-500" :
+                            usageData.usage.usage_percent >= 80 ? "bg-yellow-500" : "bg-green-500"
+                          }`}
+                          style={{ width: `${Math.min(usageData.usage.usage_percent, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {usageData.usage.usage_percent.toFixed(0)}% of {usageData.usage.data_cap_gb} GB cap
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Unlimited plan</p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No data</p>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -1,13 +1,13 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { listCustomers, deleteCustomer, type Customer } from "@/services/customers"
+import { listCustomers, deleteCustomer, approveCustomer, rejectCustomer, type Customer } from "@/services/customers"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { DataTable, type Column } from "@/components/shared/DataTable"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Eye, Search, Trash2 } from "lucide-react"
+import { Plus, Eye, Search, Trash2, Check, X } from "lucide-react"
 
 export function CustomerListPage() {
   const navigate = useNavigate()
@@ -17,6 +17,16 @@ export function CustomerListPage() {
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteCustomer(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customers"] }),
+  })
+
+  const approveMut = useMutation({
+    mutationFn: (id: string) => approveCustomer(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customers"] }),
+  })
+
+  const rejectMut = useMutation({
+    mutationFn: (id: string) => rejectCustomer(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customers"] }),
   })
 
@@ -46,6 +56,16 @@ export function CustomerListPage() {
       key: "actions", header: "",
       cell: (c) => (
         <div className="flex gap-1">
+          {c.status === "pending" && (
+            <>
+              <Button variant="ghost" size="icon" className="text-green-600" title="Approve" onClick={() => approveMut.mutate(c.id)}>
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="text-red-600" title="Reject" onClick={() => rejectMut.mutate(c.id)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </>
+          )}
           <Button variant="ghost" size="icon" onClick={() => navigate(`/customers/${c.id}`)} title="View">
             <Eye className="h-4 w-4" />
           </Button>
@@ -78,7 +98,7 @@ export function CustomerListPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        {["", "active", "suspended", "terminated"].map((s) => (
+        {["", "active", "suspended", "pending", "rejected", "terminated"].map((s) => (
           <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)}>
             {s || "All"}
           </Button>

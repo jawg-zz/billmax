@@ -176,6 +176,29 @@ async def portal_pay_invoice(
     return result
 
 
+@router.get("/usage")
+async def portal_usage(
+    customer: Customer = Depends(get_portal_customer),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services.usage_service import get_subscription_current_usage
+
+    result = await db.execute(
+        select(Subscription)
+        .where(
+            Subscription.customer_id == customer.id,
+            Subscription.status.in_(["active", "suspended"]),
+        )
+        .order_by(Subscription.created_at.desc())
+        .limit(1)
+    )
+    sub = result.scalar_one_or_none()
+    if not sub:
+        return {"usage": None}
+    usage = await get_subscription_current_usage(db, sub.id)
+    return {"usage": usage}
+
+
 @router.get("/subscription")
 async def portal_subscription(
     customer: Customer = Depends(get_portal_customer),

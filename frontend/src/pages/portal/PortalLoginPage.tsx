@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -53,6 +53,12 @@ export function PortalLoginPage() {
             <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
             </Button>
+            <div className="text-center text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Link to="/portal/register" className="text-emerald-600 hover:underline font-medium">
+                Create one
+              </Link>
+            </div>
           </form>
         </CardContent>
       </Card>

@@ -68,3 +68,36 @@ export async function portalChangePassword(current_password: string, new_passwor
   const res = await portalApi.post("/portal/change-password", null, { params: { current_password, new_password } })
   return res.data
 }
+
+export interface RegisterPlan {
+  id: string
+  name: string
+  type: string
+  download_speed_mbps: number
+  upload_speed_mbps: number
+  data_cap_gb: number | null
+  price: number
+  setup_fee: number
+  billing_cycle: string
+  description: string | null
+}
+
+export async function portalRegisterPlans() {
+  const res = await api.get("/portal/register/plans")
+  return res.data as RegisterPlan[]
+}
+
+export async function portalRegister(data: {
+  first_name: string
+  last_name: string
+  phone: string
+  email?: string
+  password: string
+  id_number?: string
+  physical_address?: string
+  service_address?: string
+  plan_id: string
+}) {
+  const res = await api.post("/portal/register", null, { params: data })
+  return res.data as { message: string; customer_id: string }
+}

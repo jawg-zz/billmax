@@ -12,6 +12,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
 import { ArrowLeft, Mail, Phone, MapPin, CreditCard, UserCheck, Pencil, Calendar } from "lucide-react"
+import { PageTransition } from "@/components/shared/PageTransition"
+import { CardSkeleton } from "@/components/ui/Skeleton"
+import { EmptyState } from "@/components/ui/EmptyState"
+import { useToast } from "@/components/ui/Toaster"
 
 const invoiceCols: Column<Invoice>[] = [
   { key: "invoice_number", header: "#" },
@@ -40,10 +44,15 @@ export function CustomerDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   const statusMut = useMutation({
     mutationFn: (status: string) => updateCustomer(id!, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customer", id] }),
+    onSuccess: (_data, status) => {
+      queryClient.invalidateQueries({ queryKey: ["customer", id] })
+      toast("success", "Status updated", `Customer status changed to ${status}`)
+    },
+    onError: () => toast("error", "Failed to update status"),
   })
 
   const { data: customer, isLoading } = useQuery({
@@ -76,15 +85,26 @@ export function CustomerDetailPage() {
     enabled: !!id,
   })
 
-  if (isLoading) return <div className="text-center py-12 text-muted-foreground">Loading...</div>
-  if (!customer) return <div className="text-center py-12 text-muted-foreground">Customer not found</div>
+  if (isLoading) return (
+    <PageTransition>
+      <CardSkeleton count={6} />
+    </PageTransition>
+  )
+  if (!customer) return (
+    <PageTransition>
+      <EmptyState
+        title="Customer not found"
+        description="The customer you're looking for doesn't exist or has been removed."
+      />
+    </PageTransition>
+  )
 
   const customerSubs = subscriptions?.filter((s) => s.customer_id === id) ?? []
   const customerTickets = tickets ?? []
   const customerMpesa = (mpesaTx ?? []).filter((t) => t.phone.includes(customer.phone.slice(-9)))
 
   return (
-    <div>
+    <PageTransition>
       <PageHeader
         title={`${customer.first_name} ${customer.last_name}`}
         actions={
@@ -187,29 +207,44 @@ export function CustomerDetailPage() {
       <div className="space-y-6">
         <div>
           <h2 className="text-lg font-semibold mb-3">Subscriptions ({customerSubs.length})</h2>
-          <DataTable columns={subCols} data={customerSubs} emptyMessage="No subscriptions" />
+          {customerSubs.length === 0 ? (
+            <EmptyState title="No subscriptions" description="This customer has no subscriptions." />
+          ) : (
+            <DataTable columns={subCols} data={customerSubs} />
+          )}
         </div>
         <div>
           <h2 className="text-lg font-semibold mb-3">Invoices ({invoices?.length ?? 0})</h2>
-          <DataTable columns={invoiceCols} data={invoices ?? []} emptyMessage="No invoices" />
+          {!invoices || invoices.length === 0 ? (
+            <EmptyState title="No invoices" description="This customer has no invoices." />
+          ) : (
+            <DataTable columns={invoiceCols} data={invoices} />
+          )}
         </div>
         <div>
           <h2 className="text-lg font-semibold mb-3">M-Pesa Transactions ({customerMpesa.length})</h2>
-          <DataTable columns={mpesaCols} data={customerMpesa} emptyMessage="No M-Pesa transactions" />
+          {customerMpesa.length === 0 ? (
+            <EmptyState title="No M-Pesa transactions" description="This customer has no M-Pesa transactions." />
+          ) : (
+            <DataTable columns={mpesaCols} data={customerMpesa} />
+          )}
         </div>
         <div>
           <h2 className="text-lg font-semibold mb-3">Tickets ({customerTickets.length})</h2>
-          <DataTable
-            columns={[
-              { key: "subject", header: "Subject" },
-              { key: "priority", header: "Priority", cell: (t) => <StatusBadge status={t.priority} /> },
-              { key: "status", header: "Status", cell: (t) => <StatusBadge status={t.status} /> },
-            ]}
-            data={customerTickets}
-            emptyMessage="No tickets"
-          />
+          {customerTickets.length === 0 ? (
+            <EmptyState title="No tickets" description="This customer has no tickets." />
+          ) : (
+            <DataTable
+              columns={[
+                { key: "subject", header: "Subject" },
+                { key: "priority", header: "Priority", cell: (t) => <StatusBadge status={t.priority} /> },
+                { key: "status", header: "Status", cell: (t) => <StatusBadge status={t.status} /> },
+              ]}
+              data={customerTickets}
+            />
+          )}
         </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

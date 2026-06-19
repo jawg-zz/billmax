@@ -10,11 +10,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Send } from "lucide-react"
+import { PageTransition } from "@/components/shared/PageTransition"
+import { CardSkeleton } from "@/components/ui/Skeleton"
+import { EmptyState } from "@/components/ui/EmptyState"
+import { useToast } from "@/components/ui/Toaster"
 
 export function TicketDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [newComment, setNewComment] = useState("")
 
   const { data: ticket, isLoading } = useQuery({
@@ -37,19 +42,39 @@ export function TicketDetailPage() {
 
   const commentMut = useMutation({
     mutationFn: () => addComment(id!, { comment: newComment }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["ticket-comments"] }); setNewComment("") },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ticket-comments"] })
+      setNewComment("")
+      toast("success", "Comment added", "Your comment has been posted.")
+    },
+    onError: () => toast("error", "Failed to add comment"),
   })
 
   const statusMut = useMutation({
     mutationFn: (status: string) => updateTicket(id!, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ticket", id] }),
+    onSuccess: (_data, status) => {
+      queryClient.invalidateQueries({ queryKey: ["ticket", id] })
+      toast("success", "Status updated", `Ticket status changed to ${status.replace("_", " ")}`)
+    },
+    onError: () => toast("error", "Failed to update status"),
   })
 
-  if (isLoading) return <div className="text-center py-12 text-muted-foreground">Loading...</div>
-  if (!ticket) return <div className="text-center py-12 text-muted-foreground">Ticket not found</div>
+  if (isLoading) return (
+    <PageTransition>
+      <CardSkeleton count={3} />
+    </PageTransition>
+  )
+  if (!ticket) return (
+    <PageTransition>
+      <EmptyState
+        title="Ticket not found"
+        description="The ticket you're looking for doesn't exist or has been removed."
+      />
+    </PageTransition>
+  )
 
   return (
-    <div>
+    <PageTransition>
       <PageHeader
         title={ticket.subject}
         actions={
@@ -74,10 +99,10 @@ export function TicketDetailPage() {
               <CardTitle>Comments ({comments?.length ?? 0})</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {comments?.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No comments yet</p>
+              {!comments || comments.length === 0 ? (
+                <EmptyState title="No comments" description="No comments have been added to this ticket yet." />
               ) : (
-                comments?.map((c) => (
+                comments.map((c) => (
                   <div key={c.id}>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-medium">{c.user_id ? `Staff #${c.user_id.slice(0, 4)}` : "System"}</span>
@@ -147,6 +172,6 @@ export function TicketDetailPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

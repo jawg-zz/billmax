@@ -1,7 +1,10 @@
 #!/bin/sh
 set -e
 
-echo "Initializing database..."
+echo "Running Alembic migrations..."
+alembic upgrade head
+
+echo "Seeding database..."
 python -m app.init_db
 
 echo "Starting server..."

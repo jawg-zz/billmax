@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
@@ -40,3 +40,26 @@ app.include_router(api_router)
 @app.get("/health")
 async def health():
     return {"status": "ok", "app": settings.APP_NAME}
+
+
+try:
+    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+    from prometheus_client import Counter, Histogram
+    REQUEST_COUNT = Counter("http_requests_total", "Total HTTP requests", ["method", "endpoint"])
+    REQUEST_LATENCY = Histogram("http_request_duration_seconds", "HTTP request latency", ["method", "endpoint"])
+
+    @app.middleware("http")
+    async def metrics_middleware(request, call_next):
+        import time
+        start = time.time()
+        response = await call_next(request)
+        duration = time.time() - start
+        REQUEST_COUNT.labels(method=request.method, endpoint=request.url.path).inc()
+        REQUEST_LATENCY.labels(method=request.method, endpoint=request.url.path).observe(duration)
+        return response
+
+    @app.get("/metrics")
+    async def metrics():
+        return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+except ImportError:
+    pass

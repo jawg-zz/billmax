@@ -52,7 +52,7 @@ export async function recordPayment(
   id: string,
   data: { amount: number; payment_method: string; transaction_code?: string }
 ) {
-  const res = await api.post(`/invoices/${id}/payment`, null, { params: data })
+  const res = await api.post(`/invoices/${id}/payment`, data)
   return res.data
 }
 

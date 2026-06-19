@@ -62,6 +62,38 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A app.celery_app worker -l info
+    environment:
+      APP_NAME: ${APP_NAME:-BillMax}
+      DATABASE_URL: postgresql+asyncpg://billmax:${POSTGRES_PASSWORD:-billmax}@db:5432/billmax
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A app.celery_app beat -l info
+    environment:
+      APP_NAME: ${APP_NAME:-BillMax}
+      DATABASE_URL: postgresql+asyncpg://billmax:${POSTGRES_PASSWORD:-billmax}@db:5432/billmax
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend

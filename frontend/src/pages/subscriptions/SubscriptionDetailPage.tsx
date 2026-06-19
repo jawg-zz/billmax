@@ -10,6 +10,9 @@ import { DataTable, type Column } from "@/components/shared/DataTable"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Wifi, User, Radio, Receipt } from "lucide-react"
+import { PageTransition } from "@/components/shared/PageTransition"
+import { CardSkeleton } from "@/components/ui/Skeleton"
+import { EmptyState } from "@/components/ui/EmptyState"
 import api from "@/services/api"
 
 const invoiceCols: Column<Invoice>[] = [
@@ -54,13 +57,24 @@ export function SubscriptionDetailPage() {
     enabled: !!id,
   })
 
-  if (isLoading) return <div className="text-center py-12 text-muted-foreground">Loading...</div>
-  if (!sub) return <div className="text-center py-12 text-muted-foreground">Subscription not found</div>
+  if (isLoading) return (
+    <PageTransition>
+      <CardSkeleton count={4} />
+    </PageTransition>
+  )
+  if (!sub) return (
+    <PageTransition>
+      <EmptyState
+        title="Subscription not found"
+        description="The subscription you're looking for doesn't exist or has been removed."
+      />
+    </PageTransition>
+  )
 
   const subInvoices = (invoices ?? []).filter((inv) => inv.subscription_id === id)
 
   return (
-    <div>
+    <PageTransition>
       <PageHeader
         title={`${plan?.name ?? "Subscription"} — ${customer?.first_name ?? ""} ${customer?.last_name ?? ""}`}
         actions={
@@ -128,23 +142,30 @@ export function SubscriptionDetailPage() {
       <div className="space-y-6">
         <div>
           <h2 className="text-lg font-semibold mb-3">Invoices ({subInvoices.length})</h2>
-          <DataTable columns={invoiceCols} data={subInvoices} emptyMessage="No invoices yet" />
+          {subInvoices.length === 0 ? (
+            <EmptyState title="No invoices" description="This subscription has no invoices yet." />
+          ) : (
+            <DataTable columns={invoiceCols} data={subInvoices} />
+          )}
         </div>
         <div>
           <h2 className="text-lg font-semibold mb-3">Provisioning History ({provLogs?.length ?? 0})</h2>
-          <DataTable
-            columns={[
-              { key: "action", header: "Action" },
-              { key: "backend", header: "Backend" },
-              { key: "status", header: "Status", cell: (l: any) => <StatusBadge status={l.status} /> },
-              { key: "error", header: "Error", cell: (l: any) => l.error || "—" },
-              { key: "created_at", header: "Date", cell: (l: any) => new Date(l.created_at).toLocaleString() },
-            ]}
-            data={provLogs ?? []}
-            emptyMessage="No provisioning history"
-          />
+          {!provLogs || provLogs.length === 0 ? (
+            <EmptyState title="No provisioning history" description="No provisioning logs found for this subscription." />
+          ) : (
+            <DataTable
+              columns={[
+                { key: "action", header: "Action" },
+                { key: "backend", header: "Backend" },
+                { key: "status", header: "Status", cell: (l: any) => <StatusBadge status={l.status} /> },
+                { key: "error", header: "Error", cell: (l: any) => l.error || "—" },
+                { key: "created_at", header: "Date", cell: (l: any) => new Date(l.created_at).toLocaleString() },
+              ]}
+              data={provLogs}
+            />
+          )}
         </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

@@ -11,6 +11,7 @@ from app.models.invoice import Invoice, InvoiceItem
 from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.invoice import InvoiceCreate, InvoiceRead
+from app.schemas.payment import RecordPaymentRequest
 from app.services.invoice_service import InvoiceService
 from app.services.pdf_service import render_invoice_pdf
 
@@ -78,22 +79,20 @@ async def send_invoice(
 @router.post("/{invoice_id}/payment")
 async def record_payment(
     invoice_id: uuid.UUID,
-    amount: float = Query(...),
-    payment_method: str = Query(...),
-    transaction_code: str | None = Query(None),
+    data: RecordPaymentRequest,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(BillingStaff),
 ):
     service = InvoiceService(db)
     payment = await service.record_payment(
-        invoice_id, amount, payment_method, transaction_code
+        invoice_id, data.amount, data.payment_method, data.transaction_code
     )
     if not payment:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return {
         "message": "Payment recorded",
         "payment_id": str(payment.id),
-        "amount": amount,
+        "amount": data.amount,
     }
 
 

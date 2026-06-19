@@ -13,6 +13,12 @@ class PaymentCreate(BaseModel):
     notes: str | None = None
 
 
+class RecordPaymentRequest(BaseModel):
+    amount: float
+    payment_method: str
+    transaction_code: str | None = None
+
+
 class PaymentRead(BaseModel):
     id: uuid.UUID
     organization_id: uuid.UUID

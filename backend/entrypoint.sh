@@ -3,10 +3,7 @@ set -e
 
 export PYTHONPATH=/app
 
-echo "Running Alembic migrations..."
-alembic upgrade head || echo "Alembic skipped (no migrations to apply or first deploy)"
-
-echo "Seeding database..."
+echo "Initializing database..."
 python -m app.init_db
 
 echo "Starting server..."

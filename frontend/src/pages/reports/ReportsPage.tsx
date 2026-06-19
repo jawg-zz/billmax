@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts"
 import { revenueReport, collectionsReport, customerReport, planReport, taxReport } from "@/services/reports"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { PageTransition } from "@/components/shared/PageTransition"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -314,7 +315,7 @@ export function ReportsPage() {
   const ActiveComponent = tabComponents[activeTab]
 
   return (
-    <div>
+    <PageTransition>
       <PageHeader title="Reports" description="Business analytics and tax summaries" />
       <div className="flex gap-1 mb-6 border-b pb-1">
         {tabs.map((t) => (
@@ -332,6 +333,6 @@ export function ReportsPage() {
         ))}
       </div>
       <ActiveComponent />
-    </div>
+    </PageTransition>
   )
 }

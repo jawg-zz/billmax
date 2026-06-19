@@ -6,17 +6,22 @@ import { listPlans } from "@/services/plans"
 import { listCustomers } from "@/services/customers"
 import { provision, suspend, restore, changeSpeed } from "@/services/provisioning"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { PageTransition } from "@/components/shared/PageTransition"
 import { DataTable, type Column } from "@/components/shared/DataTable"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { EmptyState } from "@/components/ui/EmptyState"
+import { FormField } from "@/components/ui/FormField"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Plus, Wifi, WifiOff, RefreshCw, Zap, ExternalLink } from "lucide-react"
+import { useToast } from "@/components/ui/Toaster"
+import { Plus, Wifi, WifiOff, RefreshCw, Zap, ExternalLink, Radio } from "lucide-react"
 
 export function SubscriptionListPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [speedSub, setSpeedSub] = useState<Subscription | null>(null)
   const [newPlanId, setNewPlanId] = useState("")
   const [createOpen, setCreateOpen] = useState(false)
@@ -31,37 +36,67 @@ export function SubscriptionListPage() {
   const custMap = new Map(customers?.map((c) => [c.id, c]))
   const planMap = new Map(plans?.map((p) => [p.id, p]))
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["subscriptions"] })
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["subscriptions"] })
+  }
 
-  const provisionMut = useMutation({ mutationFn: (id: string) => provision(id), onSuccess: invalidate })
-  const suspendMut = useMutation({ mutationFn: (id: string) => suspend(id), onSuccess: invalidate })
-  const restoreMut = useMutation({ mutationFn: (id: string) => restore(id), onSuccess: invalidate })
+  const provisionMut = useMutation({
+    mutationFn: (id: string) => provision(id),
+    onSuccess: () => { invalidate(); toast("success", "Subscription provisioned on network") },
+    onError: () => toast("error", "Provisioning failed"),
+  })
+  const suspendMut = useMutation({
+    mutationFn: (id: string) => suspend(id),
+    onSuccess: () => { invalidate(); toast("success", "Subscription suspended") },
+    onError: () => toast("error", "Suspend failed"),
+  })
+  const restoreMut = useMutation({
+    mutationFn: (id: string) => restore(id),
+    onSuccess: () => { invalidate(); toast("success", "Subscription restored") },
+    onError: () => toast("error", "Restore failed"),
+  })
   const speedMut = useMutation({
     mutationFn: () => changeSpeed(speedSub!.id, newPlanId),
-    onSuccess: () => { invalidate(); setSpeedSub(null); setNewPlanId("") },
+    onSuccess: () => { invalidate(); setSpeedSub(null); setNewPlanId(""); toast("success", "Plan changed") },
+    onError: () => toast("error", "Speed change failed"),
   })
   const createMut = useMutation({
     mutationFn: () => createSubscription(form),
-    onSuccess: () => { invalidate(); setCreateOpen(false); setForm({ customer_id: "", plan_id: "", next_billing_date: "" }) },
+    onSuccess: () => {
+      invalidate(); setCreateOpen(false); setForm({ customer_id: "", plan_id: "", next_billing_date: "" })
+      toast("success", "Subscription created")
+    },
+    onError: () => toast("error", "Failed to create subscription"),
   })
 
   const columns: Column<Subscription>[] = [
     {
-      key: "customer", header: "Customer",
+      key: "customer", header: "Customer", sortable: true,
+      sortValue: (s) => { const c = custMap.get(s.customer_id); return c ? `${c.first_name} ${c.last_name}` : "" },
       cell: (s) => {
         const c = custMap.get(s.customer_id)
-        return c ? `${c.first_name} ${c.last_name}` : s.customer_id.slice(0, 8)
+        return c ? (
+          <button className="text-primary hover:underline font-medium" onClick={() => navigate(`/customers/${c.id}`)}>
+            {c.first_name} {c.last_name}
+          </button>
+        ) : <span className="text-muted-foreground">{s.customer_id.slice(0, 8)}</span>
       },
     },
     {
-      key: "plan", header: "Plan",
-      cell: (s) => planMap.get(s.plan_id)?.name ?? s.plan_id.slice(0, 8),
+      key: "plan", header: "Plan", sortable: true,
+      sortValue: (s) => planMap.get(s.plan_id)?.name ?? "",
+      cell: (s) => planMap.get(s.plan_id)?.name ?? <span className="text-muted-foreground">{s.plan_id.slice(0, 8)}</span>,
     },
-    { key: "status", header: "Status", cell: (s) => <StatusBadge status={s.status} /> },
-    { key: "next_billing_date", header: "Next Billing" },
+    {
+      key: "status", header: "Status", sortable: true,
+      cell: (s) => <StatusBadge status={s.status} />,
+    },
+    { key: "next_billing_date", header: "Next Billing", sortable: true },
     {
       key: "provisioned", header: "Network",
-      cell: (s) => s.provisioned ? <span className="text-green-600 font-medium">Active</span> : <span className="text-muted-foreground">—</span>,
+      cell: (s) => s.provisioned
+        ? <span className="inline-flex items-center gap-1 text-green-600 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-green-600" />Active</span>
+        : <span className="text-muted-foreground">—</span>,
     },
     {
       key: "actions", header: "",
@@ -86,7 +121,7 @@ export function SubscriptionListPage() {
             </Button>
           )}
           {s.provisioned && (
-            <Button variant="ghost" size="icon" title="Change Speed" onClick={() => { setSpeedSub(s); setNewPlanId("") }}>
+            <Button variant="ghost" size="icon" title="Change Plan" onClick={() => { setSpeedSub(s); setNewPlanId("") }}>
               <Zap className="h-4 w-4" />
             </Button>
           )}
@@ -96,22 +131,31 @@ export function SubscriptionListPage() {
   ]
 
   return (
-    <div>
+    <PageTransition>
       <PageHeader
         title="Subscriptions"
-        description="Customer plan assignments. Provision, suspend, or change speeds."
+        description={`${subs?.length ?? 0} active assignments`}
         actions={
           <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-2" />New Subscription</Button>
         }
       />
-      <DataTable columns={columns} data={subs ?? []} loading={isLoading} />
+
+      {!isLoading && (subs ?? []).length === 0 ? (
+        <EmptyState
+          icon={<Radio className="h-12 w-12" />}
+          title="No subscriptions yet"
+          description="Assign a plan to a customer to create a subscription"
+          action={{ label: "New Subscription", onClick: () => setCreateOpen(true) }}
+        />
+      ) : (
+        <DataTable columns={columns} data={subs ?? []} loading={isLoading} pageSize={20} />
+      )}
 
       <Dialog open={!!speedSub} onOpenChange={(o) => { if (!o) setSpeedSub(null) }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Change Plan — {speedSub && planMap.get(speedSub.plan_id)?.name}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); speedMut.mutate() }} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">New Plan</label>
+            <FormField label="New Plan" required>
               <Select
                 options={(plans ?? []).map((p) => ({ value: p.id, label: `${p.name} — KES ${p.price} (${p.download_speed_mbps}/${p.upload_speed_mbps} Mbps)` }))}
                 value={newPlanId}
@@ -119,8 +163,11 @@ export function SubscriptionListPage() {
                 placeholder="Select plan"
                 required
               />
+            </FormField>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setSpeedSub(null)}>Cancel</Button>
+              <Button type="submit" disabled={speedMut.isPending}>Change Plan</Button>
             </div>
-            <Button type="submit" disabled={speedMut.isPending}>Change Speed</Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -129,8 +176,7 @@ export function SubscriptionListPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>New Subscription</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); createMut.mutate() }} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Customer</label>
+            <FormField label="Customer" required>
               <Select
                 options={(customers ?? []).map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name} (${c.phone})` }))}
                 value={form.customer_id}
@@ -138,9 +184,8 @@ export function SubscriptionListPage() {
                 placeholder="Select customer"
                 required
               />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Plan</label>
+            </FormField>
+            <FormField label="Plan" required>
               <Select
                 options={(plans ?? []).map((p) => ({ value: p.id, label: `${p.name} — KES ${p.price}/mo` }))}
                 value={form.plan_id}
@@ -148,15 +193,17 @@ export function SubscriptionListPage() {
                 placeholder="Select plan"
                 required
               />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Next Billing Date</label>
+            </FormField>
+            <FormField label="Next Billing Date" required>
               <Input type="date" value={form.next_billing_date} onChange={(e) => setForm({ ...form, next_billing_date: e.target.value })} required />
+            </FormField>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={createMut.isPending}>Create Subscription</Button>
             </div>
-            <Button type="submit" disabled={createMut.isPending}>Create Subscription</Button>
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageTransition>
   )
 }

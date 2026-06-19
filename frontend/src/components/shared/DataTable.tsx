@@ -1,11 +1,14 @@
+import { useMemo, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
-import type { ReactNode } from "react"
+import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react"
 
 export interface Column<T> {
   key: string
   header: string
   cell?: (item: T) => ReactNode
   className?: string
+  sortable?: boolean
+  sortValue?: (item: T) => string | number
 }
 
 interface DataTableProps<T> {
@@ -14,6 +17,8 @@ interface DataTableProps<T> {
   keyField?: string
   loading?: boolean
   emptyMessage?: string
+  pageSize?: number
+  onRowClick?: (item: T) => void
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -22,48 +27,173 @@ export function DataTable<T extends Record<string, any>>({
   keyField = "id",
   loading,
   emptyMessage = "No items found",
+  pageSize = 20,
+  onRowClick,
 }: DataTableProps<T>) {
+  const [sortKey, setSortKey] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
+  const [page, setPage] = useState(1)
+
+  const sorted = useMemo(() => {
+    if (!sortKey) return data
+    const col = columns.find((c) => c.key === sortKey)
+    return [...data].sort((a, b) => {
+      const getVal = col?.sortValue ?? ((item: any) => item[sortKey] ?? "")
+      const va = getVal(a)
+      const vb = getVal(b)
+      const cmp = typeof va === "number" && typeof vb === "number" ? va - vb : String(va).localeCompare(String(vb))
+      return sortDir === "asc" ? cmp : -cmp
+    })
+  }, [data, sortKey, sortDir, columns])
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
+  const paginated = sorted.slice((page - 1) * pageSize, page * pageSize)
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+    } else {
+      setSortKey(key)
+      setSortDir("asc")
+    }
+    setPage(1)
+  }
+
   if (loading) {
     return (
-      <div className="rounded-md border">
-        <div className="p-8 text-center text-muted-foreground">Loading...</div>
+      <div className="rounded-md border overflow-hidden">
+        <div className="border-b bg-muted/50 p-3">
+          <div className="flex gap-4">
+            {columns.map((col) => (
+              <div key={col.key} className="h-4 flex-1 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            ))}
+          </div>
+        </div>
+        {Array.from({ length: 5 }).map((_, r) => (
+          <div key={r} className="border-b last:border-0 p-3">
+            <div className="flex gap-4">
+              {columns.map((col) => (
+                <div key={col.key} className="h-4 flex-1 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     )
   }
 
   return (
-    <div className="rounded-md border overflow-hidden">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b bg-muted/50">
-            {columns.map((col) => (
-              <th key={col.key} className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
-                {col.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="p-8 text-center text-muted-foreground">
-                {emptyMessage}
-              </td>
+    <div className="rounded-md border overflow-hidden bg-card">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className={cn(
+                    "text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap",
+                    col.sortable && "cursor-pointer select-none hover:text-foreground transition-colors",
+                  )}
+                  onClick={() => col.sortable && handleSort(col.key)}
+                >
+                  <div className="flex items-center gap-1.5">
+                    {col.header}
+                    {col.sortable && (
+                      <span className="text-muted-foreground/50">
+                        {sortKey === col.key ? (
+                          sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronsUpDown className="h-3.5 w-3.5" />
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </th>
+              ))}
             </tr>
-          ) : (
-            data.map((item) => (
-              <tr key={item[keyField]} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
-                {columns.map((col) => (
-                  <td key={col.key} className={cn("px-4 py-3 text-sm", col.className)}>
-                    {col.cell ? col.cell(item) : item[col.key]}
-                  </td>
-                ))}
+          </thead>
+          <tbody>
+            {paginated.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="p-8 text-center text-muted-foreground">
+                  {emptyMessage}
+                </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              paginated.map((item) => (
+                <tr
+                  key={item[keyField]}
+                  className={cn(
+                    "border-b last:border-0 transition-colors",
+                    onRowClick ? "cursor-pointer hover:bg-muted/50" : "hover:bg-muted/30",
+                  )}
+                  onClick={() => onRowClick?.(item)}
+                >
+                  {columns.map((col) => (
+                    <td key={col.key} className={cn("px-4 py-3 text-sm", col.className)}>
+                      {col.cell ? col.cell(item) : item[col.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {sorted.length > pageSize && (
+        <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30 text-sm">
+          <span className="text-muted-foreground">
+            {sorted.length} result{sorted.length !== 1 ? "s" : ""}
+            {pageSize < sorted.length && (
+              <> · showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, sorted.length)}</>
+            )}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              className="p-1.5 rounded hover:bg-muted disabled:opacity-30 transition-colors"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            {Array.from({ length: Math.min(totalPages, 7) }).map((_, i) => {
+              let pageNum: number
+              if (totalPages <= 7) {
+                pageNum = i + 1
+              } else if (page <= 4) {
+                pageNum = i + 1
+              } else if (page >= totalPages - 3) {
+                pageNum = totalPages - 6 + i
+              } else {
+                pageNum = page - 3 + i
+              }
+              return (
+                <button
+                  key={pageNum}
+                  className={cn(
+                    "px-2.5 py-1 rounded text-sm font-medium transition-colors",
+                    page === pageNum
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted text-muted-foreground",
+                  )}
+                  onClick={() => setPage(pageNum)}
+                >
+                  {pageNum}
+                </button>
+              )
+            })}
+            <button
+              className="p-1.5 rounded hover:bg-muted disabled:opacity-30 transition-colors"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-

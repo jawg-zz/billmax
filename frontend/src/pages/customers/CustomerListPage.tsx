@@ -3,31 +3,47 @@ import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { listCustomers, deleteCustomer, approveCustomer, rejectCustomer, type Customer } from "@/services/customers"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { PageTransition } from "@/components/shared/PageTransition"
 import { DataTable, type Column } from "@/components/shared/DataTable"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { EmptyState } from "@/components/ui/EmptyState"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Eye, Search, Trash2, Check, X } from "lucide-react"
+import { useToast } from "@/components/ui/Toaster"
+import { Plus, Eye, Search, Trash2, Check, X, Users } from "lucide-react"
 
 export function CustomerListPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteCustomer(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customers"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] })
+      toast("success", "Customer deleted")
+    },
+    onError: () => toast("error", "Failed to delete customer"),
   })
 
   const approveMut = useMutation({
     mutationFn: (id: string) => approveCustomer(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customers"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] })
+      toast("success", "Customer approved")
+    },
+    onError: () => toast("error", "Failed to approve customer"),
   })
 
   const rejectMut = useMutation({
     mutationFn: (id: string) => rejectCustomer(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customers"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] })
+      toast("success", "Customer rejected")
+    },
+    onError: () => toast("error", "Failed to reject customer"),
   })
 
   const { data, isLoading } = useQuery({ queryKey: ["customers"], queryFn: () => listCustomers() })
@@ -39,29 +55,40 @@ export function CustomerListPage() {
     return true
   })
 
+  const statusCounts = (data ?? []).reduce((acc, c) => {
+    acc[c.status] = (acc[c.status] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
+  const allStatuses = ["active", "suspended", "pending", "rejected", "terminated"]
+
   const columns: Column<Customer>[] = [
     {
-      key: "name", header: "Name",
+      key: "name", header: "Name", sortable: true,
+      sortValue: (c) => `${c.first_name} ${c.last_name}`,
       cell: (c) => (
         <button className="text-primary hover:underline font-medium" onClick={() => navigate(`/customers/${c.id}`)}>
           {c.first_name} {c.last_name}
         </button>
       ),
     },
-    { key: "phone", header: "Phone" },
-    { key: "email", header: "Email" },
+    { key: "phone", header: "Phone", sortable: true },
+    { key: "email", header: "Email", sortable: true },
     { key: "id_number", header: "ID No." },
-    { key: "status", header: "Status", cell: (c) => <StatusBadge status={c.status} /> },
+    {
+      key: "status", header: "Status", sortable: true,
+      cell: (c) => <StatusBadge status={c.status} />,
+    },
     {
       key: "actions", header: "",
       cell: (c) => (
         <div className="flex gap-1">
           {c.status === "pending" && (
             <>
-              <Button variant="ghost" size="icon" className="text-green-600" title="Approve" onClick={() => approveMut.mutate(c.id)}>
+              <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950" title="Approve" onClick={() => approveMut.mutate(c.id)}>
                 <Check className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-red-600" title="Reject" onClick={() => rejectMut.mutate(c.id)}>
+              <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950" title="Reject" onClick={() => rejectMut.mutate(c.id)}>
                 <X className="h-4 w-4" />
               </Button>
             </>
@@ -81,10 +108,10 @@ export function CustomerListPage() {
   ]
 
   return (
-    <div>
+    <PageTransition>
       <PageHeader
         title="Customers"
-        description={`${filtered.length} of ${data?.length ?? 0} subscribers`}
+        description={`${data?.length ?? 0} total subscribers`}
         actions={<Button onClick={() => navigate("/customers/new")}><Plus className="h-4 w-4 mr-2" />New Customer</Button>}
       />
 
@@ -98,14 +125,26 @@ export function CustomerListPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        {["", "active", "suspended", "pending", "rejected", "terminated"].map((s) => (
+        <Button key="all" variant={statusFilter === "" ? "default" : "outline"} size="sm" onClick={() => setStatusFilter("")}>
+          All ({data?.length ?? 0})
+        </Button>
+        {allStatuses.map((s) => (
           <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)}>
-            {s || "All"}
+            {s.charAt(0).toUpperCase() + s.slice(1)} ({statusCounts[s] ?? 0})
           </Button>
         ))}
       </div>
 
-      <DataTable columns={columns} data={filtered} loading={isLoading} emptyMessage="No customers found" />
-    </div>
+      {!isLoading && filtered.length === 0 ? (
+        <EmptyState
+          icon={<Users className="h-12 w-12" />}
+          title={search || statusFilter ? "No customers match your filters" : "No customers yet"}
+          description={search || statusFilter ? "Try adjusting your search or filters" : "Add your first customer to get started with billing"}
+          action={search || statusFilter ? undefined : { label: "New Customer", onClick: () => navigate("/customers/new") }}
+        />
+      ) : (
+        <DataTable columns={columns} data={filtered} loading={isLoading} emptyMessage="No customers found" />
+      )}
+    </PageTransition>
   )
 }

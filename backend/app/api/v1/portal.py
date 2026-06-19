@@ -18,19 +18,30 @@ from app.utils.security import hash_password, verify_password
 router = APIRouter(prefix="/portal", tags=["portal"])
 
 
+from pydantic import BaseModel
+
+class PortalLoginRequest(BaseModel):
+    phone: str
+    password: str
+
+class PortalTicketCreate(BaseModel):
+    subject: str
+    description: str
+    priority: str = "medium"
+
+
 @router.post("/login")
 async def portal_login(
-    phone: str = Query(...),
-    password: str = Query(...),
+    data: PortalLoginRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Customer).where(Customer.phone == phone))
+    result = await db.execute(select(Customer).where(Customer.phone == data.phone))
     customer = result.scalar_one_or_none()
     if not customer:
         raise HTTPException(status_code=401, detail="Invalid phone or password")
     if not customer.portal_password:
         raise HTTPException(status_code=401, detail="Portal access not set up. Contact support.")
-    if not verify_password(password, customer.portal_password):
+    if not verify_password(data.password, customer.portal_password):
         raise HTTPException(status_code=401, detail="Invalid phone or password")
 
     token = create_portal_token(customer.id)
@@ -263,18 +274,16 @@ async def portal_tickets(
 
 @router.post("/tickets", status_code=201)
 async def portal_create_ticket(
-    subject: str = Query(...),
-    description: str = Query(...),
-    priority: str = Query("medium"),
+    data: PortalTicketCreate,
     customer: Customer = Depends(get_portal_customer),
     db: AsyncSession = Depends(get_db),
 ):
     ticket = Ticket(
         organization_id=customer.organization_id,
         customer_id=customer.id,
-        subject=subject,
-        description=description,
-        priority=priority,
+        subject=data.subject,
+        description=data.description,
+        priority=data.priority,
         status="open",
     )
     db.add(ticket)

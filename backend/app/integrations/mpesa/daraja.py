@@ -1,5 +1,5 @@
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
@@ -23,7 +23,7 @@ class DarajaClient:
         return "https://sandbox.safaricom.co.ke"
 
     def _timestamp(self) -> str:
-        return datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        return datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
 
     def _password(self, timestamp: str) -> str:
         raw = f"{self.shortcode}{self.passkey}{timestamp}"
@@ -44,7 +44,8 @@ class DarajaClient:
             resp.raise_for_status()
             data = resp.json()
             self._token = data["access_token"]
-            self._token_expiry = datetime.utcnow()
+            expires_in = data.get("expires_in", 3600)
+            self._token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in - 60)
             return self._token
 
     async def _post(self, path: str, payload: dict) -> dict:

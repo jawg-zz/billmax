@@ -1,4 +1,5 @@
-from datetime import date, datetime
+import uuid
+from datetime import date, datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +18,7 @@ OVERDUE_DAYS_SUSPEND = 30
 
 async def process_overdue(
     db: AsyncSession,
-    organization_id: int | None = None,
+    organization_id: uuid.UUID | None = None,
 ) -> list[dict]:
     today = date.today()
     query = select(Invoice).where(
@@ -74,7 +75,7 @@ async def process_overdue(
             body=html_body,
             channel="email",
             status="sent" if sent else "failed",
-            sent_at=datetime.utcnow() if sent else None,
+            sent_at=datetime.now(timezone.utc) if sent else None,
         )
         db.add(notification)
 

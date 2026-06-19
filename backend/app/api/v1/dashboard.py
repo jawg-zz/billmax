@@ -82,9 +82,9 @@ async def dashboard_stats(
     aging_result = await db.execute(
         select(
             func.sum(case((Invoice.due_date < today - timedelta(days=30), 1), else_=0)).label("over_30"),
-            func.sum(case((Invoice.due_date.between(today - timedelta(days=15), today - timedelta(days=29)), 1), else_=0)).label("days_15_29"),
-            func.sum(case((Invoice.due_date.between(today - timedelta(days=8), today - timedelta(days=14)), 1), else_=0)).label("days_8_14"),
-            func.sum(case((Invoice.due_date.between(today - timedelta(days=1), today - timedelta(days=7)), 1), else_=0)).label("days_1_7"),
+            func.sum(case((Invoice.due_date.between(today - timedelta(days=29), today - timedelta(days=15)), 1), else_=0)).label("days_15_29"),
+            func.sum(case((Invoice.due_date.between(today - timedelta(days=14), today - timedelta(days=8)), 1), else_=0)).label("days_8_14"),
+            func.sum(case((Invoice.due_date.between(today - timedelta(days=7), today - timedelta(days=1)), 1), else_=0)).label("days_1_7"),
         ).where(
             Invoice.organization_id == org_id,
             Invoice.status.in_(["sent", "overdue", "partially_paid"]),

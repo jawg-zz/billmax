@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException, Header, status
 from jose import JWTError, jwt
@@ -15,7 +15,7 @@ PORTAL_TOKEN_EXPIRE_DAYS = 7
 
 
 def create_portal_token(customer_id: uuid.UUID) -> str:
-    expire = datetime.utcnow() + timedelta(days=PORTAL_TOKEN_EXPIRE_DAYS)
+    expire = datetime.now(timezone.utc) + timedelta(days=PORTAL_TOKEN_EXPIRE_DAYS)
     payload = {"sub": str(customer_id), "exp": expire, "type": "portal"}
     return jwt.encode(payload, settings.JWT_SECRET, algorithm=PORTAL_ALGORITHM)
 

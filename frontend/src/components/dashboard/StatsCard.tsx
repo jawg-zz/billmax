@@ -1,5 +1,7 @@
 import type { LucideIcon } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+import { TrendingUp, TrendingDown } from "lucide-react"
 
 interface StatsCardProps {
   title: string
@@ -11,29 +13,47 @@ interface StatsCardProps {
   trendValue?: string
 }
 
+const gradientMap: Record<string, string> = {
+  "text-blue-600": "from-blue-500 to-blue-600",
+  "text-green-600": "from-emerald-400 to-emerald-600",
+  "text-orange-600": "from-orange-400 to-orange-600",
+  "text-emerald-600": "from-emerald-400 to-emerald-600",
+  "text-purple-600": "from-purple-400 to-purple-600",
+  "text-sky-600": "from-sky-400 to-sky-600",
+}
+
 export function StatsCard({ title, value, icon: Icon, color, subtitle, trend, trendValue }: StatsCardProps) {
+  const gradient = gradientMap[color] || "from-blue-500 to-blue-600"
+
   return (
-    <Card className="transition-all hover:shadow-md hover:-translate-y-0.5 duration-200">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <div className={`p-1.5 rounded-md bg-${color?.replace("text-", "")}/10 ${color}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {(subtitle || trend) && (
-          <div className="flex items-center gap-2 mt-1">
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-            {trend && (
-              <span className={`text-xs font-medium ${
-                trend === "up" ? "text-emerald-600" : trend === "down" ? "text-red-600" : "text-muted-foreground"
-              }`}>
-                {trendValue}
-              </span>
+    <Card className="card-hover border-border/50 bg-card overflow-hidden">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <p className="stats-label">{title}</p>
+            <p className="stats-value">{value}</p>
+            {(subtitle || trend) && (
+              <div className="flex items-center gap-2">
+                {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+                {trend && (
+                  <span className={cn(
+                    "inline-flex items-center gap-0.5 text-xs font-semibold",
+                    trend === "up" && "text-emerald-500",
+                    trend === "down" && "text-red-500",
+                    trend === "neutral" && "text-muted-foreground",
+                  )}>
+                    {trend === "up" && <TrendingUp className="h-3 w-3" />}
+                    {trend === "down" && <TrendingDown className="h-3 w-3" />}
+                    {trendValue}
+                  </span>
+                )}
+              </div>
             )}
           </div>
-        )}
+          <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-sm", gradient)}>
+            <Icon className="h-5 w-5 text-white" />
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

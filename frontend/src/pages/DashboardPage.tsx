@@ -57,6 +57,8 @@ export function DashboardPage() {
     { label: "30+ days", count: stats?.overdue_aging.over_30 ?? 0, color: "bg-red-700" },
   ]
 
+  const maxOverdue = Math.max(...aging.map((a) => a.count), 1)
+
   return (
     <PageTransition>
       <PageHeader title="Dashboard" description="Overview of your ISP operations" />
@@ -75,18 +77,18 @@ export function DashboardPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Revenue (6 months)</CardTitle>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-foreground">Revenue (6 months)</CardTitle>
           </CardHeader>
           <CardContent>
             <RevenueChart />
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Overdue Aging</CardTitle>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-foreground">Overdue Aging</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -99,23 +101,26 @@ export function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {aging.map((a) => (
                   <div key={a.label}>
-                    <div className="flex justify-between text-sm mb-1">
+                    <div className="flex justify-between text-sm mb-1.5">
                       <span className="text-muted-foreground">{a.label}</span>
-                      <span className="font-medium">{a.count} invoices</span>
+                      <span className="font-medium tabular-nums">{a.count} invoices</span>
                     </div>
                     <div className="h-2 rounded-full bg-muted overflow-hidden">
                       <div
-                        className={`h-full rounded-full ${a.color} transition-all duration-500`}
-                        style={{ width: `${Math.min((a.count / Math.max(stats?.overdue_invoices ?? 1, 1)) * 100, 100)}%` }}
+                        className={`h-full rounded-full ${a.color} transition-all duration-700 ease-out`}
+                        style={{ width: `${(a.count / maxOverdue) * 100}%` }}
                       />
                     </div>
                   </div>
                 ))}
-                <div className="pt-2 text-sm text-muted-foreground">
-                  Total outstanding: <span className="font-medium text-foreground">KES {(stats?.total_outstanding ?? 0).toLocaleString()}</span>
+                <div className="pt-1 border-t border-border/50 mt-3">
+                  <div className="flex justify-between text-sm pt-2">
+                    <span className="text-muted-foreground">Total outstanding</span>
+                    <span className="font-semibold text-foreground tabular-nums">KES {(stats?.total_outstanding ?? 0).toLocaleString()}</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -124,17 +129,17 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-foreground">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
             {activityLoading ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex gap-3">
-                    <Skeleton className="h-4 w-4 rounded-full shrink-0" />
-                    <div className="flex-1 space-y-1">
+                  <div key={i} className="flex gap-4">
+                    <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-1.5 pt-1">
                       <Skeleton className="h-4 w-3/4" />
                       <Skeleton className="h-3 w-1/4" />
                     </div>
@@ -147,29 +152,50 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-foreground">Quick Actions</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="justify-start h-auto py-3 hover:bg-primary/5" disabled={billingRunning} onClick={async () => {
-                setBillingRunning(true); try { await api.post("/billing/run"); window.location.reload() } catch {} finally { setBillingRunning(false) }
-              }}>
-                {billingRunning ? <Loader2 className="h-4 w-4 mr-2 animate-spin text-green-600" /> : <Play className="h-4 w-4 mr-2 text-green-600" />}
-                {billingRunning ? "Running..." : "Run Billing"}
+              <Button
+                variant="outline"
+                className="justify-start h-auto py-3.5 px-4 border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all"
+                disabled={billingRunning}
+                onClick={async () => {
+                  setBillingRunning(true)
+                  try { await api.post("/billing/run"); window.location.reload() } catch {} finally { setBillingRunning(false) }
+                }}
+              >
+                {billingRunning ? <Loader2 className="h-4 w-4 mr-2 animate-spin text-emerald-500" /> : <Play className="h-4 w-4 mr-2 text-emerald-500" />}
+                <span className="text-sm font-medium">{billingRunning ? "Running..." : "Run Billing"}</span>
               </Button>
-              <Button variant="outline" className="justify-start h-auto py-3 hover:bg-primary/5" onClick={() => navigate("/invoices")}>
-                <AlertTriangle className="h-4 w-4 mr-2 text-orange-600" />Overdue
+              <Button
+                variant="outline"
+                className="justify-start h-auto py-3.5 px-4 border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all"
+                onClick={() => navigate("/invoices")}
+              >
+                <AlertTriangle className="h-4 w-4 mr-2 text-orange-500" />
+                <span className="text-sm font-medium">Overdue</span>
               </Button>
-              <Button variant="outline" className="justify-start h-auto py-3 hover:bg-primary/5" onClick={() => navigate("/customers/new")}>
-                <UserPlus className="h-4 w-4 mr-2 text-blue-600" />New Customer
+              <Button
+                variant="outline"
+                className="justify-start h-auto py-3.5 px-4 border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all"
+                onClick={() => navigate("/customers/new")}
+              >
+                <UserPlus className="h-4 w-4 mr-2 text-blue-500" />
+                <span className="text-sm font-medium">New Customer</span>
               </Button>
-              <Button variant="outline" className="justify-start h-auto py-3 hover:bg-primary/5" onClick={() => navigate("/subscriptions")}>
-                <Wifi className="h-4 w-4 mr-2 text-sky-600" />Provision
+              <Button
+                variant="outline"
+                className="justify-start h-auto py-3.5 px-4 border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all"
+                onClick={() => navigate("/subscriptions")}
+              >
+                <Wifi className="h-4 w-4 mr-2 text-sky-500" />
+                <span className="text-sm font-medium">Provision</span>
               </Button>
             </div>
-            <div className="flex flex-wrap gap-2 pt-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-3 pt-1 text-xs text-muted-foreground border-t border-border/50 pt-3">
               <StatusBadge status={stats && stats.active_subscriptions > 0 ? "active" : "pending"} />
               <span>{stats?.active_subscriptions ?? 0} active subs · {stats?.unprovisioned_subs ?? 0} need provisioning</span>
             </div>

@@ -14,11 +14,13 @@ const iconMap: Record<string, LucideIcon> = {
   subscription_created: UserPlus,
 }
 
-const colorMap: Record<string, string> = {
-  payment_received: "text-green-600",
-  invoice_created: "text-blue-600",
-  subscription_created: "text-purple-600",
+const bgColorMap: Record<string, string> = {
+  payment_received: "bg-emerald-500/15 text-emerald-500",
+  invoice_created: "bg-blue-500/15 text-blue-500",
+  subscription_created: "bg-purple-500/15 text-purple-500",
 }
+
+
 
 interface ActivityFeedProps {
   items: ActivityEvent[]
@@ -26,30 +28,39 @@ interface ActivityFeedProps {
 
 export function ActivityFeed({ items }: ActivityFeedProps) {
   if (items.length === 0) {
-    return <p className="text-sm text-muted-foreground py-4 text-center">No recent activity</p>
+    return <p className="text-sm text-muted-foreground py-8 text-center">No recent activity</p>
   }
 
   return (
-    <div className="space-y-0">
-      {items.map((item, i) => {
-        const Icon = iconMap[item.type] || AlertTriangle
-        const color = colorMap[item.type] || "text-muted-foreground"
-        return (
-          <div key={i} className="flex items-start gap-3 py-2.5 border-b last:border-0">
-            <Icon className={`h-4 w-4 mt-0.5 ${color} shrink-0`} />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm">
-                <span className="font-medium">{item.customer_name}</span>
-                {" "}{item.description}
-                {item.amount ? <span className="font-medium"> KES {item.amount.toLocaleString()}</span> : null}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {new Date(item.timestamp).toLocaleDateString()} {new Date(item.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </p>
+    <div className="relative">
+      <div className="absolute left-[19px] top-3 bottom-3 w-px bg-border" />
+      <div className="space-y-0">
+        {items.map((item, i) => {
+          const Icon = iconMap[item.type] || AlertTriangle
+          const bgColor = bgColorMap[item.type] || "bg-muted text-muted-foreground"
+          return (
+            <div key={i} className="relative flex items-start gap-4 pb-4 last:pb-0">
+              <div className="relative z-10 flex shrink-0">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-full ${bgColor} shadow-sm`}>
+                  <Icon className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="min-w-0 flex-1 pt-1.5">
+                <p className="text-sm">
+                  <span className="font-semibold text-foreground">{item.customer_name}</span>
+                  <span className="text-muted-foreground"> {item.description}</span>
+                  {item.amount ? <span className="font-semibold text-foreground"> KES {item.amount.toLocaleString()}</span> : null}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {new Date(item.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  {" "}
+                  {new Date(item.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
             </div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }

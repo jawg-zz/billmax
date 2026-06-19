@@ -58,3 +58,36 @@ class MikroTikBackend(ProvisioningBackend):
         finally:
             if api:
                 await asyncio.to_thread(api.close)
+
+
+class MockMikroTikBackend(ProvisioningBackend):
+    name = "mock_routeros"
+
+    async def provision(
+        self, username: str, password: str, download_speed: int, upload_speed: int
+    ) -> dict:
+        return {
+            "success": True,
+            "username": username,
+            "action": "provision",
+            "speed": f"{download_speed}/{upload_speed}",
+        }
+
+    async def suspend(self, username: str) -> dict:
+        return {"success": True, "username": username, "action": "suspend"}
+
+    async def restore(self, username: str) -> dict:
+        return {"success": True, "username": username, "action": "restore"}
+
+    async def change_speed(
+        self, username: str, download_speed: int, upload_speed: int
+    ) -> dict:
+        return {
+            "success": True,
+            "username": username,
+            "action": "change_speed",
+            "speed": f"{download_speed}/{upload_speed}",
+        }
+
+    async def deprovision(self, username: str) -> dict:
+        return {"success": True, "username": username, "action": "deprovision"}

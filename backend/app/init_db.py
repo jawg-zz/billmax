@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 
 from sqlalchemy import select, text
@@ -36,6 +37,14 @@ async def needs_seed() -> bool:
         return result.scalar_one_or_none() is None
 
 
+async def drop_all_data():
+    """Drop all data from all tables (for reseeding)."""
+    async with engine.begin() as conn:
+        for table in reversed(Base.metadata.sorted_tables):
+            await conn.execute(text(f"TRUNCATE TABLE {table.name} CASCADE"))
+    print("All existing data cleared.")
+
+
 async def column_exists(conn, table: str, column: str) -> bool:
     result = await conn.execute(
         text("SELECT column_name FROM information_schema.columns WHERE table_name=:t AND column_name=:c"),
@@ -60,12 +69,19 @@ async def main():
     await create_tables()
     await run_migrations()
 
-    if await needs_seed():
+    reseed = os.environ.get("RESEED_DEMO", "").lower() in ("true", "1", "yes")
+
+    if reseed:
+        print("RESEED_DEMO=true — clearing existing data and reseeding...")
+        await drop_all_data()
+        from app.seed import seed
+        await seed()
+    elif await needs_seed():
         print("First deploy — seeding demo data...")
         from app.seed import seed
         await seed()
     else:
-        print("Database already seeded — skipping.")
+        print("Database already seeded — skipping. Set RESEED_DEMO=true to re-seed.")
 
 
 if __name__ == "__main__":

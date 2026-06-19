@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,7 +44,7 @@ async def get_usage_summary(
     customer_id: uuid.UUID | None = None,
     days: int = 30,
 ) -> list[UsageSummary]:
-    since = datetime.utcnow() - timedelta(days=days)
+    since = datetime.now(timezone.utc) - timedelta(days=days)
 
     query = (
         select(
@@ -116,7 +116,7 @@ async def get_subscription_current_usage(
     subscription_id: uuid.UUID,
     days: int = 30,
 ) -> dict:
-    since = datetime.utcnow() - timedelta(days=days)
+    since = datetime.now(timezone.utc) - timedelta(days=days)
     result = await db.execute(
         select(
             func.sum(UsageRecord.download_bytes).label("download_bytes"),

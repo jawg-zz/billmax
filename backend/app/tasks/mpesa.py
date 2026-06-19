@@ -6,7 +6,16 @@ from app.services.mpesa_service import reconcile_pending
 @celery_app.task
 def reconcile_mpesa_transactions():
     import asyncio
-    asyncio.run(_reconcile())
+    try:
+        asyncio.get_running_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(_reconcile())
+        finally:
+            loop.close()
+    except RuntimeError:
+        asyncio.run(_reconcile())
 
 
 async def _reconcile():

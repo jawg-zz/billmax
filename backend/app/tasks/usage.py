@@ -8,7 +8,16 @@ from sqlalchemy import select
 @celery_app.task
 def enforce_usage_policies():
     import asyncio
-    asyncio.run(_enforce_fup_for_all_orgs())
+    try:
+        asyncio.get_running_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(_enforce_fup_for_all_orgs())
+        finally:
+            loop.close()
+    except RuntimeError:
+        asyncio.run(_enforce_fup_for_all_orgs())
 
 
 async def _enforce_fup_for_all_orgs():

@@ -68,10 +68,16 @@ class FreeRADIUSBackend(ProvisioningBackend):
         return result
 
     async def restore(self, username: str) -> dict:
+        # Clear password restriction — user will set a new one on next login
         result = await self._execute(
-            "UPDATE radcheck SET value = :p "
+            "UPDATE radcheck SET value = 'restored' "
             "WHERE username = :u AND attribute = 'Cleartext-Password'",
-            {"u": username, "p": "restored"},
+            {"u": username},
+        )
+        await self._execute(
+            "DELETE FROM radreply WHERE username = :u "
+            "AND attribute = 'Mikrotik-Rate-Limit'",
+            {"u": username},
         )
         return result
 

@@ -11,7 +11,16 @@ from sqlalchemy import select
 @celery_app.task
 def daily_billing_run():
     import asyncio
-    asyncio.run(_run_billing_for_all_orgs())
+    try:
+        asyncio.get_running_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(_run_billing_for_all_orgs())
+        finally:
+            loop.close()
+    except RuntimeError:
+        asyncio.run(_run_billing_for_all_orgs())
 
 
 async def _run_billing_for_all_orgs():
@@ -26,7 +35,16 @@ async def _run_billing_for_all_orgs():
 @celery_app.task
 def process_overdue_task():
     import asyncio
-    asyncio.run(_process_overdue_for_all())
+    try:
+        asyncio.get_running_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(_process_overdue_for_all())
+        finally:
+            loop.close()
+    except RuntimeError:
+        asyncio.run(_process_overdue_for_all())
 
 
 async def _process_overdue_for_all():

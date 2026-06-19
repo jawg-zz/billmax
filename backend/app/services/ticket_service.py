@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,7 +69,7 @@ class TicketService:
         for field, value in data.model_dump(exclude_unset=True).items():
             setattr(ticket, field, value)
         if data.status == "resolved":
-            ticket.resolved_at = datetime.utcnow()
+            ticket.resolved_at = datetime.now(timezone.utc)
         await self.db.commit()
         await self.db.refresh(ticket)
         return ticket

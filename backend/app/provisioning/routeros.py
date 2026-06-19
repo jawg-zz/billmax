@@ -19,6 +19,7 @@ class MikroTikBackend(ProvisioningBackend):
         )
 
     async def _call(self, method: str, *args, **kwargs) -> dict:
+        api = None
         try:
             api = await asyncio.to_thread(self._get_connection)
             if method == "add_ppp_secret":
@@ -54,88 +55,6 @@ class MikroTikBackend(ProvisioningBackend):
             return {"success": True, "result": str(result)}
         except Exception as e:
             return {"success": False, "error": str(e)}
-
-    async def provision(
-        self, username: str, password: str, download_speed: int, upload_speed: int
-    ) -> dict:
-        secret = await self._call(
-            "add_ppp_secret",
-            name=username,
-            password=password,
-            service="pppoe",
-            profile="default",
-        )
-        if not secret["success"]:
-            return secret
-
-        queue = await self._call(
-            "add_queue",
-            name=username,
-            target=username,
-            max_limit=f"{upload_speed}M/{download_speed}M",
-        )
-        return {"success": True, "secret": secret, "queue": queue}
-
-    async def suspend(self, username: str) -> dict:
-        result = await self._call("disable_ppp_secret", **{".id": username})
-        queue_disable = await self._call(
-            "set_queue", **{".id": username, "disabled": "yes"}
-        )
-        return {"success": result.get("success", False), "result": result}
-
-    async def restore(self, username: str) -> dict:
-        result = await self._call("enable_ppp_secret", **{".id": username})
-        queue_enable = await self._call(
-            "set_queue", **{".id": username, "disabled": "no"}
-        )
-        return {"success": result.get("success", False), "result": result}
-
-    async def change_speed(
-        self, username: str, download_speed: int, upload_speed: int
-    ) -> dict:
-        result = await self._call(
-            "set_queue",
-            **{
-                ".id": username,
-                "max_limit": f"{upload_speed}M/{download_speed}M",
-            },
-        )
-        return result
-
-    async def deprovision(self, username: str) -> dict:
-        await self._call("remove_ppp_secret", **{".id": username})
-        await self._call("remove_queue", **{".id": username})
-        return {"success": True}
-
-
-class MockMikroTikBackend(ProvisioningBackend):
-    name = "mock_routeros"
-
-    async def provision(
-        self, username: str, password: str, download_speed: int, upload_speed: int
-    ) -> dict:
-        return {
-            "success": True,
-            "username": username,
-            "action": "provision",
-            "speed": f"{download_speed}/{upload_speed}",
-        }
-
-    async def suspend(self, username: str) -> dict:
-        return {"success": True, "username": username, "action": "suspend"}
-
-    async def restore(self, username: str) -> dict:
-        return {"success": True, "username": username, "action": "restore"}
-
-    async def change_speed(
-        self, username: str, download_speed: int, upload_speed: int
-    ) -> dict:
-        return {
-            "success": True,
-            "username": username,
-            "action": "change_speed",
-            "speed": f"{download_speed}/{upload_speed}",
-        }
-
-    async def deprovision(self, username: str) -> dict:
-        return {"success": True, "username": username, "action": "deprovision"}
+        finally:
+            if api:
+                await asyncio.to_thread(api.close)

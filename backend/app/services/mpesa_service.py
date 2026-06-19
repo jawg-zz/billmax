@@ -112,7 +112,7 @@ async def handle_stk_callback(
 
         callback_items = callback_data.get("CallbackMetadata", {}).get("Item", [])
 
-        if result_code == "0":
+        if str(result_code) in ("0", "0"):
             mpesa_tx.status = "completed"
             for item in callback_items:
                 name = item.get("Name")

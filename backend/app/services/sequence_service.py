@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +12,7 @@ async def next_invoice_number(
     organization_id: uuid.UUID,
     prefix: str = "INV",
 ) -> str:
-    year = datetime.utcnow().year
+    year = datetime.now(timezone.utc).year
     result = await db.execute(
         select(SequenceNumber).where(
             SequenceNumber.organization_id == organization_id,

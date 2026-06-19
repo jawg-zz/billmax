@@ -125,7 +125,7 @@ async def dashboard_activity(
             Payment.amount,
             Customer.first_name,
             Customer.last_name,
-            func.literal("payment_received").label("type"),
+            literal_column("'payment_received'").label("type"),
         )
         .join(Customer, Payment.customer_id == Customer.id)
         .where(
@@ -142,7 +142,7 @@ async def dashboard_activity(
             Invoice.total,
             Customer.first_name,
             Customer.last_name,
-            func.literal("invoice_created").label("type"),
+            literal_column("'invoice_created'").label("type"),
         )
         .join(Customer, Invoice.customer_id == Customer.id)
         .where(Invoice.organization_id == org_id)
@@ -156,7 +156,7 @@ async def dashboard_activity(
             literal_column("0").label("amount"),
             Customer.first_name,
             Customer.last_name,
-            func.literal("subscription_created").label("type"),
+            literal_column("'subscription_created'").label("type"),
         )
         .join(Customer, Subscription.customer_id == Customer.id)
         .where(Subscription.organization_id == org_id)

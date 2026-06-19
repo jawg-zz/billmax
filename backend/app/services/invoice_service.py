@@ -2,6 +2,7 @@ import uuid
 from datetime import date, datetime
 
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.customer import Customer
@@ -89,7 +90,7 @@ class InvoiceService:
         skip: int = 0,
         limit: int = 100,
     ) -> list[Invoice]:
-        query = select(Invoice).where(
+        query = select(Invoice).options(selectinload(Invoice.items)).where(
             Invoice.organization_id == organization_id
         )
         if status:

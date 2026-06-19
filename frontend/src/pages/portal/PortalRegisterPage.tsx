@@ -5,7 +5,7 @@ import { portalRegisterPlans, portalRegister } from "@/services/portal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Check, Loader2 } from "lucide-react"
+import { ArrowLeft, Check, Loader2, ArrowDown, ArrowUp } from "lucide-react"
 
 export function PortalRegisterPage() {
   const navigate = useNavigate()
@@ -69,11 +69,11 @@ export function PortalRegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-950 p-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
             <div className="flex justify-center mb-4">
-              <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+              <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
                 <Check className="h-8 w-8 text-green-600" />
               </div>
             </div>
@@ -94,19 +94,19 @@ export function PortalRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
-      <header className="bg-white border-b">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <header className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b">
+        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/portal/login")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <span className="font-semibold">Create Account</span>
+          <span className="font-semibold text-sm">Create Account</span>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 py-6">
         {error && (
-          <div className="text-sm bg-red-50 text-red-800 p-3 rounded-md mb-4">{error}</div>
+          <div className="text-sm bg-red-50 dark:bg-red-950 text-red-800 dark:text-red-200 p-3 rounded-md mb-4">{error}</div>
         )}
 
         {step === 0 && (
@@ -128,7 +128,7 @@ export function PortalRegisterPage() {
                       <CardTitle className="text-lg">{plan.name}</CardTitle>
                       <CardDescription>{plan.description || `${plan.type} plan`}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-2">
+                    <CardContent className="space-y-3">
                       <div className="text-3xl font-bold text-emerald-600">
                         KES {plan.price.toLocaleString()}
                         <span className="text-sm font-normal text-muted-foreground">/{plan.billing_cycle}</span>
@@ -136,9 +136,13 @@ export function PortalRegisterPage() {
                       {plan.setup_fee > 0 && (
                         <p className="text-sm text-muted-foreground">Setup fee: KES {plan.setup_fee.toLocaleString()}</p>
                       )}
-                      <div className="flex items-center gap-2 text-sm">
-                        <span>⬇ {plan.download_speed_mbps} Mbps</span>
-                        <span>⬆ {plan.upload_speed_mbps} Mbps</span>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                          <ArrowDown className="h-3 w-3" /> {plan.download_speed_mbps} Mbps
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/40 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
+                          <ArrowUp className="h-3 w-3" /> {plan.upload_speed_mbps} Mbps
+                        </span>
                       </div>
                       {plan.data_cap_gb && (
                         <p className="text-sm text-muted-foreground">{plan.data_cap_gb} GB data cap</p>

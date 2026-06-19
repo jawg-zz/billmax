@@ -5,7 +5,7 @@ import { portalInvoices, portalPayInvoice, portalMe, type PortalCustomer } from 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { ArrowLeft, Smartphone, Loader2 } from "lucide-react"
+import { ArrowLeft, Smartphone, Loader2, CheckCircle2, Receipt } from "lucide-react"
 
 export function PortalInvoicesPage() {
   const navigate = useNavigate()
@@ -40,21 +40,39 @@ export function PortalInvoicesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <header className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b">
+        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/portal")}><ArrowLeft className="h-4 w-4" /></Button>
-          <span className="font-semibold">My Invoices</span>
+          <span className="font-semibold text-sm">My Invoices</span>
         </div>
       </header>
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+      <main className="max-w-4xl mx-auto px-4 py-6 space-y-4">
         {payMsg && (
-          <div className="text-sm bg-blue-50 text-blue-800 p-3 rounded-md">{payMsg}</div>
+          <div className="text-sm bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 p-3 rounded-md">{payMsg}</div>
         )}
         {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading...</div>
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <div className="space-y-3 animate-pulse">
+                    <div className="h-4 w-32 bg-muted/60 rounded" />
+                    <div className="h-3 w-24 bg-muted/60 rounded" />
+                    <div className="h-8 w-28 bg-muted/60 rounded" />
+                    <div className="h-9 w-full bg-muted/60 rounded" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ) : invoices?.length === 0 ? (
-          <Card><CardContent className="py-12 text-center text-muted-foreground">No invoices</CardContent></Card>
+          <Card>
+            <CardContent className="py-16 text-center text-muted-foreground">
+              <Receipt className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">No invoices</p>
+            </CardContent>
+          </Card>
         ) : (
           invoices?.map((inv) => (
             <Card key={inv.id}>
@@ -69,12 +87,16 @@ export function PortalInvoicesPage() {
                     <StatusBadge status={inv.status} />
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                  <span className="text-sm">
-                    {inv.balance_due > 0 ? `Balance: KES ${inv.balance_due.toLocaleString()}` : "Paid in full"}
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                  <span className="text-sm flex items-center gap-1.5">
+                    {inv.balance_due > 0 ? (
+                      `Balance: KES ${inv.balance_due.toLocaleString()}`
+                    ) : (
+                      <><CheckCircle2 className="h-4 w-4 text-emerald-600" /> Paid in full</>
+                    )}
                   </span>
                   {inv.balance_due > 0 && (
-                    <Button size="sm" disabled={payingId === inv.id} onClick={() => handlePay(inv.id)}>
+                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" disabled={payingId === inv.id} onClick={() => handlePay(inv.id)}>
                       {payingId === inv.id ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Smartphone className="h-4 w-4 mr-1" />}
                       Pay with M-Pesa
                     </Button>

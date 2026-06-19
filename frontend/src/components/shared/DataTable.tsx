@@ -65,7 +65,7 @@ export function DataTable<T extends Record<string, any>>({
         <div className="border-b bg-muted/50 p-3">
           <div className="flex gap-4">
             {columns.map((col) => (
-              <div key={col.key} className="h-4 flex-1 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div key={col.key} className="h-4 flex-1 bg-muted/60 rounded animate-pulse" />
             ))}
           </div>
         </div>
@@ -73,7 +73,7 @@ export function DataTable<T extends Record<string, any>>({
           <div key={r} className="border-b last:border-0 p-3">
             <div className="flex gap-4">
               {columns.map((col) => (
-                <div key={col.key} className="h-4 flex-1 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+                <div key={col.key} className="h-4 flex-1 bg-muted/60 rounded animate-pulse" />
               ))}
             </div>
           </div>
@@ -84,16 +84,16 @@ export function DataTable<T extends Record<string, any>>({
 
   return (
     <div className="rounded-md border overflow-hidden bg-card">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto relative">
         <table className="w-full">
           <thead>
-            <tr className="border-b bg-muted/50">
+            <tr className="border-b bg-muted/50 sticky top-0 z-10">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={cn(
-                    "text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap",
-                    col.sortable && "cursor-pointer select-none hover:text-foreground transition-colors",
+                    "text-left text-xs font-medium text-muted-foreground px-4 py-3 whitespace-nowrap",
+                    col.sortable && "cursor-pointer select-none hover:bg-muted/80 transition-colors",
                   )}
                   onClick={() => col.sortable && handleSort(col.key)}
                 >
@@ -121,12 +121,14 @@ export function DataTable<T extends Record<string, any>>({
                 </td>
               </tr>
             ) : (
-              paginated.map((item) => (
+              paginated.map((item, idx) => (
                 <tr
                   key={item[keyField]}
                   className={cn(
-                    "border-b last:border-0 transition-colors",
-                    onRowClick ? "cursor-pointer hover:bg-muted/50" : "hover:bg-muted/30",
+                    "border-b border-border/50 last:border-0 transition-colors",
+                    idx % 2 === 0 && "bg-muted/20",
+                    "hover:bg-muted/40",
+                    onRowClick && "cursor-pointer",
                   )}
                   onClick={() => onRowClick?.(item)}
                 >

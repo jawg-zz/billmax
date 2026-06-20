@@ -121,32 +121,48 @@ export function CustomerDetailPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <Card>
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <Phone className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">Phone</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">{customer.phone}</CardContent>
+          <CardContent className="flex items-start gap-3 p-4">
+            <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">
+              <Phone className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-xs text-muted-foreground">Phone</p>
+              <p className="text-sm font-medium truncate">{customer.phone}</p>
+            </div>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">Email</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">{customer.email || "—"}</CardContent>
+          <CardContent className="flex items-start gap-3 p-4">
+            <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">
+              <Mail className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-xs text-muted-foreground">Email</p>
+              <p className="text-sm font-medium truncate">{customer.email || "—"}</p>
+            </div>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">KRA PIN</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">{customer.kra_pin || "—"}</CardContent>
+          <CardContent className="flex items-start gap-3 p-4">
+            <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">
+              <CreditCard className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-xs text-muted-foreground">KRA PIN</p>
+              <p className="text-sm font-medium truncate">{customer.kra_pin || "—"}</p>
+            </div>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">Status</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">
+                <UserCheck className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0 space-y-0.5">
+                <p className="text-xs text-muted-foreground">Status</p>
+              </div>
+            </div>
             <Select
               options={[
                 { value: "active", label: "Active" },
@@ -159,25 +175,33 @@ export function CustomerDetailPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">M-Pesa Phone</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">{customer.mpesa_phone || "—"}</CardContent>
+          <CardContent className="flex items-start gap-3 p-4">
+            <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">
+              <Calendar className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-xs text-muted-foreground">M-Pesa Phone</p>
+              <p className="text-sm font-medium truncate">{customer.mpesa_phone || "—"}</p>
+            </div>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">ID Number</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">{customer.id_number || "—"}</CardContent>
+          <CardContent className="flex items-start gap-3 p-4">
+            <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">
+              <Calendar className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-xs text-muted-foreground">ID Number</p>
+              <p className="text-sm font-medium truncate">{customer.id_number || "—"}</p>
+            </div>
+          </CardContent>
         </Card>
       </div>
 
       {customer.notes && (
         <Card className="mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Notes</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle>Notes</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">{customer.notes}</CardContent>
         </Card>
@@ -186,18 +210,26 @@ export function CustomerDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {customer.physical_address && (
           <Card>
-            <CardHeader className="flex flex-row items-center gap-2 pb-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm font-medium">Physical Address</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  Physical Address
+                </div>
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-sm">{customer.physical_address}</CardContent>
           </Card>
         )}
         {customer.service_address && (
           <Card>
-            <CardHeader className="flex flex-row items-center gap-2 pb-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm font-medium">Service Address</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  Service Address
+                </div>
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-sm">{customer.service_address}</CardContent>
           </Card>
@@ -205,45 +237,73 @@ export function CustomerDetailPage() {
       </div>
 
       <div className="space-y-6">
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Subscriptions ({customerSubs.length})</h2>
-          {customerSubs.length === 0 ? (
-            <EmptyState title="No subscriptions" description="This customer has no subscriptions." />
-          ) : (
-            <DataTable columns={subCols} data={customerSubs} />
-          )}
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Invoices ({invoices?.length ?? 0})</h2>
-          {!invoices || invoices.length === 0 ? (
-            <EmptyState title="No invoices" description="This customer has no invoices." />
-          ) : (
-            <DataTable columns={invoiceCols} data={invoices} />
-          )}
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold mb-3">M-Pesa Transactions ({customerMpesa.length})</h2>
-          {customerMpesa.length === 0 ? (
-            <EmptyState title="No M-Pesa transactions" description="This customer has no M-Pesa transactions." />
-          ) : (
-            <DataTable columns={mpesaCols} data={customerMpesa} />
-          )}
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Tickets ({customerTickets.length})</h2>
-          {customerTickets.length === 0 ? (
-            <EmptyState title="No tickets" description="This customer has no tickets." />
-          ) : (
-            <DataTable
-              columns={[
-                { key: "subject", header: "Subject" },
-                { key: "priority", header: "Priority", cell: (t) => <StatusBadge status={t.priority} /> },
-                { key: "status", header: "Status", cell: (t) => <StatusBadge status={t.status} /> },
-              ]}
-              data={customerTickets}
-            />
-          )}
-        </div>
+        <Card>
+          <CardHeader className="pb-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <span>Subscriptions</span>
+              <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground normal-case tracking-normal">{customerSubs.length}</span>
+            </h3>
+          </CardHeader>
+          <CardContent>
+            {customerSubs.length === 0 ? (
+              <EmptyState title="No subscriptions" description="This customer has no subscriptions." />
+            ) : (
+              <DataTable columns={subCols} data={customerSubs} />
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <span>Invoices</span>
+              <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground normal-case tracking-normal">{invoices?.length ?? 0}</span>
+            </h3>
+          </CardHeader>
+          <CardContent>
+            {!invoices || invoices.length === 0 ? (
+              <EmptyState title="No invoices" description="This customer has no invoices." />
+            ) : (
+              <DataTable columns={invoiceCols} data={invoices} />
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <span>M-Pesa Transactions</span>
+              <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground normal-case tracking-normal">{customerMpesa.length}</span>
+            </h3>
+          </CardHeader>
+          <CardContent>
+            {customerMpesa.length === 0 ? (
+              <EmptyState title="No M-Pesa transactions" description="This customer has no M-Pesa transactions." />
+            ) : (
+              <DataTable columns={mpesaCols} data={customerMpesa} />
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <span>Tickets</span>
+              <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground normal-case tracking-normal">{customerTickets.length}</span>
+            </h3>
+          </CardHeader>
+          <CardContent>
+            {customerTickets.length === 0 ? (
+              <EmptyState title="No tickets" description="This customer has no tickets." />
+            ) : (
+              <DataTable
+                columns={[
+                  { key: "subject", header: "Subject" },
+                  { key: "priority", header: "Priority", cell: (t) => <StatusBadge status={t.priority} /> },
+                  { key: "status", header: "Status", cell: (t) => <StatusBadge status={t.status} /> },
+                ]}
+                data={customerTickets}
+              />
+            )}
+          </CardContent>
+        </Card>
       </div>
     </PageTransition>
   )

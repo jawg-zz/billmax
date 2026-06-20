@@ -90,7 +90,7 @@ export function TicketDetailPage() {
               <CardTitle>Description</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{ticket.description}</p>
+              <p className="text-sm whitespace-pre-wrap text-muted-foreground">{ticket.description}</p>
             </CardContent>
           </Card>
 
@@ -98,31 +98,48 @@ export function TicketDetailPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Comments ({comments?.length ?? 0})</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               {!comments || comments.length === 0 ? (
                 <EmptyState title="No comments" description="No comments have been added to this ticket yet." />
               ) : (
-                comments.map((c) => (
-                  <div key={c.id}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium">{c.user_id ? `Staff #${c.user_id.slice(0, 4)}` : "System"}</span>
-                      <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString()}</span>
-                      {c.is_internal && <StatusBadge status="internal" />}
-                    </div>
-                    <p className="text-sm">{c.comment}</p>
-                    <Separator className="mt-3" />
-                  </div>
-                ))
+                <div className="space-y-0">
+                  {comments.map((c, idx) => {
+                    const userName = c.user_id ? `Staff #${c.user_id.slice(0, 4)}` : "System"
+                    const avatarLetter = userName.charAt(0)
+                    return (
+                      <div key={c.id} className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <span className="text-xs font-medium text-primary">{avatarLetter}</span>
+                          </div>
+                          {idx < comments.length - 1 && (
+                            <div className="w-px flex-1 bg-border/60 mt-1" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 pb-5">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium">{userName}</span>
+                            <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString()}</span>
+                            {c.is_internal && <StatusBadge status="internal" />}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{c.comment}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
+              <Separator className="my-4" />
               <form
                 onSubmit={(e) => { e.preventDefault(); commentMut.mutate() }}
-                className="flex gap-2 pt-2"
+                className="flex gap-2"
               >
                 <Input
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Add a comment..."
                   required
+                  className="flex-1"
                 />
                 <Button type="submit" size="icon" disabled={commentMut.isPending}>
                   <Send className="h-4 w-4" />
@@ -134,39 +151,46 @@ export function TicketDetailPage() {
 
         <div className="space-y-6">
           <Card>
-            <CardHeader><CardTitle>Details</CardTitle></CardHeader>
-            <CardContent className="space-y-3 text-sm">
+            <CardHeader>
+              <CardTitle>Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
               <div>
-                <span className="text-muted-foreground">Status</span>
-                <div className="mt-1">
-                  <div className="flex gap-1 flex-wrap">
-                    {["open", "in_progress", "resolved", "closed"].map((s) => (
-                      <Button
-                        key={s}
-                        size="sm"
-                        variant={ticket.status === s ? "default" : "outline"}
-                        onClick={() => statusMut.mutate(s)}
-                      >
-                        {s.replace("_", " ")}
-                      </Button>
-                    ))}
-                  </div>
+                <p className="text-xs text-muted-foreground mb-2">Status</p>
+                <div className="flex gap-1.5 flex-wrap">
+                  {["open", "in_progress", "resolved", "closed"].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => statusMut.mutate(s)}
+                      className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
+                        ticket.status === s
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {s.replace("_", " ")}
+                    </button>
+                  ))}
                 </div>
               </div>
+              <Separator />
               <div>
-                <span className="text-muted-foreground">Priority</span>
-                <div className="mt-1"><StatusBadge status={ticket.priority} /></div>
+                <p className="text-xs text-muted-foreground mb-1">Priority</p>
+                <StatusBadge status={ticket.priority} />
               </div>
+              <Separator />
               <div>
-                <span className="text-muted-foreground">Customer</span>
-                <div className="mt-1 font-medium">
+                <p className="text-xs text-muted-foreground mb-1">Customer</p>
+                <p className="font-medium">
                   {customer ? `${customer.first_name} ${customer.last_name}` : "—"}
-                </div>
-                <div className="text-xs text-muted-foreground">{customer?.phone}</div>
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">{customer?.phone}</p>
               </div>
+              <Separator />
               <div>
-                <span className="text-muted-foreground">Created</span>
-                <div className="mt-1">{new Date(ticket.created_at).toLocaleDateString()}</div>
+                <p className="text-xs text-muted-foreground mb-1">Created</p>
+                <p className="font-medium">{new Date(ticket.created_at).toLocaleDateString()}</p>
               </div>
             </CardContent>
           </Card>

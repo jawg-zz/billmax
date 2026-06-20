@@ -100,31 +100,43 @@ export function InvoiceDetailPage() {
           <CardHeader>
             <CardTitle>Invoice Items</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left pb-2">Description</th>
-                  <th className="text-right pb-2">Qty</th>
-                  <th className="text-right pb-2">Unit Price</th>
-                  <th className="text-right pb-2">Total</th>
+                <tr className="border-b border-border/60">
+                  <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
+                  <th className="text-right px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Qty</th>
+                  <th className="text-right px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider tabular-nums">Unit Price</th>
+                  <th className="text-right px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider tabular-nums">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {invoice.items.map((item) => (
-                  <tr key={item.id} className="border-b last:border-0">
-                    <td className="py-2">{item.description}</td>
-                    <td className="text-right py-2">{item.quantity}</td>
-                    <td className="text-right py-2">KES {item.unit_price.toLocaleString()}</td>
-                    <td className="text-right py-2">KES {item.total.toLocaleString()}</td>
+                  <tr key={item.id} className="border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-6 py-3">{item.description}</td>
+                    <td className="text-right px-6 py-3 tabular-nums">{item.quantity}</td>
+                    <td className="text-right px-6 py-3 tabular-nums">KES {item.unit_price.toLocaleString()}</td>
+                    <td className="text-right px-6 py-3 tabular-nums font-medium">KES {item.total.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr><td colSpan={3} className="text-right pt-4 font-medium">Subtotal</td><td className="text-right pt-4">KES {invoice.subtotal.toLocaleString()}</td></tr>
-                <tr><td colSpan={3} className="text-right">VAT (16%)</td><td className="text-right">KES {invoice.vat_amount.toLocaleString()}</td></tr>
-                <tr className="font-bold text-lg"><td colSpan={3} className="text-right">Total</td><td className="text-right">KES {invoice.total.toLocaleString()}</td></tr>
-                <tr><td colSpan={3} className="text-right">Balance Due</td><td className="text-right">KES {invoice.balance_due.toLocaleString()}</td></tr>
+                <tr className="border-t border-border/60">
+                  <td colSpan={3} className="text-right px-6 pt-4 pb-1 text-sm text-muted-foreground">Subtotal</td>
+                  <td className="text-right px-6 pt-4 pb-1 text-sm tabular-nums">KES {invoice.subtotal.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td colSpan={3} className="text-right px-6 py-1 text-sm text-muted-foreground">VAT (16%)</td>
+                  <td className="text-right px-6 py-1 text-sm tabular-nums">KES {invoice.vat_amount.toLocaleString()}</td>
+                </tr>
+                <tr className="border-t border-border/40">
+                  <td colSpan={3} className="text-right px-6 pt-3 pb-1 text-base font-bold">Total</td>
+                  <td className="text-right px-6 pt-3 pb-1 text-base font-bold tabular-nums">KES {invoice.total.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td colSpan={3} className="text-right px-6 py-1 text-sm">Balance Due</td>
+                  <td className="text-right px-6 py-1 text-sm font-semibold tabular-nums">KES {invoice.balance_due.toLocaleString()}</td>
+                </tr>
               </tfoot>
             </table>
           </CardContent>
@@ -133,27 +145,27 @@ export function InvoiceDetailPage() {
           <CardHeader>
             <CardTitle>Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
+          <CardContent className="space-y-4 text-sm">
             <div>
-              <span className="text-muted-foreground">Status</span>
-              <div className="mt-1"><StatusBadge status={invoice.status} /></div>
+              <p className="text-xs text-muted-foreground mb-1">Status</p>
+              <StatusBadge status={invoice.status} />
             </div>
             <div>
-              <span className="text-muted-foreground">Issue Date</span>
-              <div>{invoice.issue_date}</div>
+              <p className="text-xs text-muted-foreground mb-1">Issue Date</p>
+              <p className="font-medium">{invoice.issue_date}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">Due Date</span>
-              <div>{invoice.due_date}</div>
+              <p className="text-xs text-muted-foreground mb-1">Due Date</p>
+              <p className="font-medium">{invoice.due_date}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">Invoice #</span>
-              <div>{invoice.invoice_number}</div>
+              <p className="text-xs text-muted-foreground mb-1">Invoice #</p>
+              <p className="font-medium">{invoice.invoice_number}</p>
             </div>
             {invoice.notes && (
               <div>
-                <span className="text-muted-foreground">Notes</span>
-                <div className="mt-1 text-xs bg-muted p-2 rounded">{invoice.notes}</div>
+                <p className="text-xs text-muted-foreground mb-1">Notes</p>
+                <p className="text-xs bg-muted p-3 rounded-lg text-muted-foreground">{invoice.notes}</p>
               </div>
             )}
           </CardContent>
@@ -162,16 +174,31 @@ export function InvoiceDetailPage() {
 
       <Dialog open={mpesaOpen} onOpenChange={setMpesaOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>M-Pesa STK Push</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); mpesaMut.mutate() }} className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Send payment request of <strong>KES {invoice.balance_due.toLocaleString()}</strong> to customer's phone.
-            </p>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Customer M-Pesa Phone</label>
-              <Input value={mpesaPhone} onChange={(e) => setMpesaPhone(e.target.value)} placeholder="2547XXXXXXXX" required />
+          <DialogHeader>
+            <DialogTitle>
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-5 w-5 text-primary" />
+                M-Pesa STK Push
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); mpesaMut.mutate() }} className="space-y-5">
+            <div className="bg-muted/50 rounded-lg p-4 text-sm">
+              <p className="text-muted-foreground">
+                Send payment request of <strong className="text-foreground">KES {invoice.balance_due.toLocaleString()}</strong> to the customer's M-Pesa phone.
+              </p>
             </div>
-            <Button type="submit" disabled={mpesaMut.isPending || !mpesaPhone}>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Customer M-Pesa Phone</label>
+              <Input
+                value={mpesaPhone}
+                onChange={(e) => setMpesaPhone(e.target.value)}
+                placeholder="2547XXXXXXXX"
+                required
+              />
+              <p className="text-xs text-muted-foreground">Enter the phone number in international format (e.g., 254712345678)</p>
+            </div>
+            <Button type="submit" disabled={mpesaMut.isPending || !mpesaPhone} className="w-full">
               {mpesaMut.isPending ? "Sending..." : "Send STK Push"}
             </Button>
           </form>

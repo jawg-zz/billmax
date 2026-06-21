@@ -38,3 +38,5 @@ class Organization(Base):
     tickets = relationship("Ticket", back_populates="organization")
     notifications = relationship("Notification", back_populates="organization")
     audit_logs = relationship("AuditLog", back_populates="organization")
+    cpe_devices = relationship("CpeDevice", back_populates="organization")
+    inventory_items = relationship("InventoryItem", back_populates="organization")

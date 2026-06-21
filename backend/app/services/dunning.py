@@ -12,6 +12,7 @@ from app.models.subscription import Subscription
 from app.provisioning.registry import get_all_backends
 from app.services.email_service import send_email
 from app.services.pdf_service import render_email_template
+from app.services.whatsapp_service import send_whatsapp
 
 OVERDUE_DAYS_SUSPEND = 30
 
@@ -51,8 +52,37 @@ async def process_overdue(
 
         should_suspend = days_overdue >= OVERDUE_DAYS_SUSPEND
 
+        if days_overdue < 7:
+            continue
+
+        if days_overdue >= 7 and days_overdue < 14:
+            template_name = "dunning_7d.html"
+            subject_prefix = "Gentle Reminder"
+            whatsapp_text = (
+                f"Dear {customer.first_name}, your invoice {invoice.invoice_number} for "
+                f"KES {float(invoice.total):,.2f} is {days_overdue} days overdue. "
+                f"Please pay at your earliest convenience. - {org.name}"
+            )
+        elif days_overdue >= 14 and days_overdue < 21:
+            template_name = "dunning_14d.html"
+            subject_prefix = "Firm Reminder"
+            whatsapp_text = (
+                f"Dear {customer.first_name}, your invoice {invoice.invoice_number} for "
+                f"KES {float(invoice.total):,.2f} is {days_overdue} days overdue. "
+                f"Please pay immediately to avoid late fees. - {org.name}"
+            )
+        elif days_overdue >= 21 and days_overdue < 30:
+            template_name = "dunning_21d.html"
+            subject_prefix = "Final Notice"
+            whatsapp_text = (
+                f"Dear {customer.first_name}, FINAL NOTICE: Your invoice "
+                f"{invoice.invoice_number} for KES {float(invoice.total):,.2f} is "
+                f"{days_overdue} days overdue. Service will be suspended if not paid. "
+                f"- {org.name}"
+            )
+
         html_body = render_email_template(
-            "overdue_notice.html",
+            template_name,
             customer_name=f"{customer.first_name} {customer.last_name}",
             invoice_number=invoice.invoice_number,
             total=float(invoice.total),
@@ -63,7 +93,7 @@ async def process_overdue(
 
         sent = await send_email(
             to=customer.email,
-            subject=f"OVERDUE: Invoice {invoice.invoice_number} from {org.name}",
+            subject=f"{subject_prefix}: Invoice {invoice.invoice_number} from {org.name}",
             html_body=html_body,
         )
 
@@ -71,13 +101,29 @@ async def process_overdue(
             organization_id=invoice.organization_id,
             customer_id=customer.id,
             recipient=customer.email,
-            subject=f"Overdue notice - Invoice {invoice.invoice_number}",
+            subject=f"{subject_prefix} - Invoice {invoice.invoice_number}",
             body=html_body,
             channel="email",
             status="sent" if sent else "failed",
             sent_at=datetime.now(timezone.utc) if sent else None,
         )
         db.add(notification)
+
+        if customer.phone:
+            whatsapp_sent = await send_whatsapp(
+                db,
+                organization_id=invoice.organization_id,
+                customer_id=customer.id,
+                recipient=customer.phone,
+                message=whatsapp_text,
+            )
+            actions.append({
+                "action": "whatsapp_notification",
+                "customer_id": str(customer.id),
+                "invoice_id": str(invoice.id),
+                "days_overdue": days_overdue,
+                "success": whatsapp_sent,
+            })
 
         if should_suspend:
             sub_result = await db.execute(
@@ -106,6 +152,14 @@ async def process_overdue(
                     "invoice_id": str(invoice.id),
                     "days_overdue": days_overdue,
                 })
+
+        actions.append({
+            "action": "reminder_sent",
+            "stage": subject_prefix,
+            "customer_id": str(customer.id),
+            "invoice_id": str(invoice.id),
+            "days_overdue": days_overdue,
+        })
 
     await db.commit()
     return actions

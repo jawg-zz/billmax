@@ -46,3 +46,4 @@ class Subscription(Base):
     customer = relationship("Customer", back_populates="subscriptions")
     plan = relationship("Plan", back_populates="subscriptions")
     invoices = relationship("Invoice", back_populates="subscription")
+    cpe_devices = relationship("CpeDevice", back_populates="subscription")

@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;padding:20px;">
+  <div style="background:#fefce8;border:1px solid #fde047;padding:15px;margin-bottom:20px;">
+    <h2 style="color:#a16207;margin:0;">Gentle Reminder</h2>
+  </div>
+  <p>Dear {{ customer_name }},</p>
+  <p>This is a friendly reminder that your invoice <strong>{{ invoice_number }}</strong> for <strong>KES {{ "{:,.2f}".format(total) }}</strong> was due on <strong>{{ due_date }}</strong> and is now <strong>{{ days_overdue }} day(s) overdue</strong>.</p>
+  <p>Please arrange payment at your earliest convenience to avoid any disruption to your service.</p>
+  <p>Regards,<br><strong>{{ org_name }}</strong></p>
+</body>
+</html>

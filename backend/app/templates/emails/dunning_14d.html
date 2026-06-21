@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;padding:20px;">
+  <div style="background:#fef2f2;border:1px solid #fecaca;padding:15px;margin-bottom:20px;">
+    <h2 style="color:#ea580c;margin:0;">Firm Reminder</h2>
+  </div>
+  <p>Dear {{ customer_name }},</p>
+  <p>Your invoice <strong>{{ invoice_number }}</strong> for <strong>KES {{ "{:,.2f}".format(total) }}</strong> was due on <strong>{{ due_date }}</strong> and is now <strong>{{ days_overdue }} days overdue</strong>.</p>
+  <p style="color:#ea580c;"><strong>Important:</strong> Please pay immediately to avoid a late fee and potential service interruption. Continued non-payment may result in additional charges.</p>
+  <p>Regards,<br><strong>{{ org_name }}</strong></p>
+</body>
+</html>

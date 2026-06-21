@@ -12,6 +12,8 @@ from app.models.audit_log import AuditLog
 from app.models.sequence_number import SequenceNumber
 from app.models.provisioning_log import ProvisioningLog
 from app.models.usage import UsageRecord, UsageAlert
+from app.models.cpe_device import CpeDevice
+from app.models.inventory_item import InventoryItem
 
 __all__ = [
     "Organization",
@@ -31,4 +33,6 @@ __all__ = [
     "ProvisioningLog",
     "UsageRecord",
     "UsageAlert",
+    "CpeDevice",
+    "InventoryItem",
 ]

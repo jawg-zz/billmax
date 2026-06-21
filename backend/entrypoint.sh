@@ -3,6 +3,9 @@ set -e
 
 export PYTHONPATH=/app
 
+echo "Running database migrations..."
+alembic upgrade head
+
 echo "Initializing database..."
 python -m app.init_db
 

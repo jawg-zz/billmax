@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Users, Radio, Receipt,
-  Wifi, Phone, Ticket, Shield, BarChart3, Activity,
+  Wifi, Phone, Ticket, Shield, BarChart3, Activity, Package,
   Menu, X,
 } from "lucide-react"
 
@@ -21,6 +21,7 @@ const navSections = [
       { to: "/plans", label: "Plans", icon: Radio, roles: ["admin", "billing"] },
       { to: "/subscriptions", label: "Subscriptions", icon: Wifi, roles: ["admin", "billing", "support", "tech"] },
       { to: "/usage", label: "Usage", icon: Activity, roles: ["admin", "billing", "tech"] },
+      { to: "/inventory", label: "Inventory", icon: Package, roles: ["admin", "billing", "tech"] },
     ],
   },
   {

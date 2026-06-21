@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;padding:20px;">
+  <div style="background:#7f1d1d;border:1px solid #dc2626;padding:15px;margin-bottom:20px;">
+    <h2 style="color:#fff;margin:0;">Final Notice</h2>
+  </div>
+  <p>Dear {{ customer_name }},</p>
+  <p>Your invoice <strong>{{ invoice_number }}</strong> for <strong>KES {{ "{:,.2f}".format(total) }}</strong> was due on <strong>{{ due_date }}</strong> and is now <strong>{{ days_overdue }} days overdue</strong>.</p>
+  <p style="color:#dc2626;"><strong>Final Notice:</strong> Your internet service will be suspended within 48 hours if payment is not received immediately. To avoid suspension, please pay the full amount outstanding.</p>
+  <p>Regards,<br><strong>{{ org_name }}</strong></p>
+</body>
+</html>

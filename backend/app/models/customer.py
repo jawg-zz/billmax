@@ -46,3 +46,4 @@ class Customer(Base):
     invoices = relationship("Invoice", back_populates="customer")
     payments = relationship("Payment", back_populates="customer")
     tickets = relationship("Ticket", back_populates="customer")
+    cpe_devices = relationship("CpeDevice", back_populates="customer")

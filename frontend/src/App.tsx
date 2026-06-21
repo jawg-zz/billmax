@@ -20,6 +20,7 @@ import { SubscriptionDetailPage } from "@/pages/subscriptions/SubscriptionDetail
 import { UsersPage } from "@/pages/users/UsersPage"
 import { ReportsPage } from "@/pages/reports/ReportsPage"
 import { UsagePage } from "@/pages/UsagePage"
+import { InventoryPage } from "@/pages/inventory/InventoryPage"
 import { PortalLoginPage } from "@/pages/portal/PortalLoginPage"
 import { PortalRegisterPage } from "@/pages/portal/PortalRegisterPage"
 import { PortalDashboardPage } from "@/pages/portal/PortalDashboardPage"
@@ -77,6 +78,7 @@ function AppRoutes() {
         <Route path="/users" element={<UsersPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/usage" element={<UsagePage />} />
+        <Route path="/inventory" element={<InventoryPage />} />
       </Route>
       <Route path="/portal/login" element={<PortalLoginPage />} />
       <Route path="/portal/register" element={<PortalRegisterPage />} />

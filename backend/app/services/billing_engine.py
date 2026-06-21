@@ -11,6 +11,7 @@ from app.models.plan import Plan
 from app.models.subscription import Subscription
 from app.services.sequence_service import next_invoice_number
 from app.services.tax import calculate_total_with_vat
+from app.services.invoice_service import InvoiceService
 
 
 CYCLE_DAYS = {
@@ -88,6 +89,26 @@ async def run_billing(
     await db.commit()
     for inv in created_invoices:
         await db.refresh(inv)
+
+    invoice_service = InvoiceService(db)
+    emailed_count = 0
+    for inv in created_invoices:
+        try:
+            cust_result = await db.execute(
+                select(Customer).where(Customer.id == inv.customer_id)
+            )
+            customer = cust_result.scalar_one()
+            if customer and customer.email:
+                sent = await invoice_service.send_invoice_email(inv.id, organization_id)
+                if sent:
+                    emailed_count += 1
+                    print(f"  Invoice {inv.invoice_number} emailed to {customer.email}")
+                else:
+                    print(f"  Invoice {inv.invoice_number} email skipped (no SMTP / no email)")
+        except Exception as e:
+            print(f"  Failed to email invoice {inv.invoice_number}: {e}")
+
+    print(f"Billing run: {len(created_invoices)} invoices created, {emailed_count} emailed")
     return created_invoices
 
 

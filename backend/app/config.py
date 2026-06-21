@@ -37,6 +37,10 @@ class Settings(BaseSettings):
 
     RADIUS_DATABASE_URL: str = ""
 
+    WHATSAPP_ENABLED: bool = False
+    WHATSAPP_API_URL: str = ""
+    WHATSAPP_API_KEY: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 

@@ -11,6 +11,7 @@ from app.api.v1.plans import router as plans_router
 from app.api.v1.portal import router as portal_router
 from app.api.v1.portal_register import router as portal_register_router
 from app.api.v1.usage import router as usage_router
+from app.api.v1.inventory import router as inventory_router
 from app.api.v1.provisioning import router as provisioning_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.subscriptions import router as subscriptions_router
@@ -31,3 +32,4 @@ api_router.include_router(tickets_router)
 api_router.include_router(reports_router)
 api_router.include_router(dashboard_router)
 api_router.include_router(usage_router)
+api_router.include_router(inventory_router)

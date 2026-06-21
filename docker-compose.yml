@@ -32,45 +32,13 @@ services:
       DEBUG: "false"
       DATABASE_URL: postgresql+asyncpg://billmax:${POSTGRES_PASSWORD:-billmax}@db:5432/billmax
       REDIS_URL: redis://redis:6379/0
-      PROVISIONING_BACKEND: ${PROVISIONING_BACKEND:-mock}
-      ROUTEROS_HOST: ${ROUTEROS_HOST:-}
-      ROUTEROS_PORT: ${ROUTEROS_PORT:-8728}
-      ROUTEROS_USERNAME: ${ROUTEROS_USERNAME:-admin}
-      ROUTEROS_PASSWORD: ${ROUTEROS_PASSWORD:-}
-      RADIUS_DATABASE_URL: ${RADIUS_DATABASE_URL:-}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-  celery_worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: celery -A app.celery_app worker -l info
-    environment:
-      APP_NAME: ${APP_NAME:-BillMax}
-      DATABASE_URL: postgresql+asyncpg://billmax:${POSTGRES_PASSWORD:-billmax}@db:5432/billmax
-      REDIS_URL: redis://redis:6379/0
-      PROVISIONING_BACKEND: ${PROVISIONING_BACKEND:-mock}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-  celery_beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: celery -A app.celery_app beat -l info
-    environment:
-      APP_NAME: ${APP_NAME:-BillMax}
-      DATABASE_URL: postgresql+asyncpg://billmax:${POSTGRES_PASSWORD:-billmax}@db:5432/billmax
-      REDIS_URL: redis://redis:6379/0
+      MPESA_CONSUMER_KEY: ${MPESA_CONSUMER_KEY:-}
+      MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET:-}
+      MPESA_PASSKEY: ${MPESA_PASSKEY:-}
+      MPESA_SHORTCODE: ${MPESA_SHORTCODE:-}
+      MPESA_ENVIRONMENT: ${MPESA_ENVIRONMENT:-sandbox}
+      RESEED_DEMO: ${RESEED_DEMO:-false}
+      WHATSAPP_ENABLED: ${WHATSAPP_ENABLED:-false}
     depends_on:
       db:
         condition: service_healthy

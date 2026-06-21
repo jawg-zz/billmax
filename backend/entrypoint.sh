@@ -3,13 +3,13 @@ set -e
 
 export PYTHONPATH=/app
 
-echo "Stamping existing migrations as applied..."
-alembic stamp head
+echo "Stamping migrations up to 0003 as applied (tables created by init_db)..."
+alembic stamp 0003
 
-echo "Running pending migrations (column type changes, new tables)..."
+echo "Running pending migrations (0004: usage_records BIGINT)..."
 alembic upgrade head
 
-echo "Initializing database (creates tables not yet migrated, seeds data)..."
+echo "Initializing database (creates remaining tables, seeds data)..."
 python -m app.init_db
 
 echo "Starting server..."

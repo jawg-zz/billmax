@@ -15,6 +15,8 @@ from app.models.usage import UsageRecord, UsageAlert
 from app.models.cpe_device import CpeDevice
 from app.models.inventory_item import InventoryItem
 
+from app.models.settings import OrgSettings
+
 __all__ = [
     "Organization",
     "User",
@@ -35,4 +37,5 @@ __all__ = [
     "UsageAlert",
     "CpeDevice",
     "InventoryItem",
+    "OrgSettings",
 ]

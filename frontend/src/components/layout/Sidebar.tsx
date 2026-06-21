@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Users, Radio, Receipt,
   Wifi, Phone, Ticket, Shield, BarChart3, Activity, Package,
-  Menu, X,
+  Menu, X, Settings,
 } from "lucide-react"
 
 const navSections = [
@@ -42,6 +42,7 @@ const navSections = [
     items: [
       { to: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "billing"] },
       { to: "/users", label: "Users", icon: Shield, roles: ["admin"] },
+      { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
     ],
   },
 ]

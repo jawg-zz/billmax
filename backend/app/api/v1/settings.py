@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.dependencies import AdminOnly
@@ -60,6 +61,8 @@ async def get_settings(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(AdminOnly),
 ):
+    # Eagerly load organization relationship
+    await db.refresh(user, ["organization"])
     result = await db.execute(
         select(OrgSettings).where(OrgSettings.organization_id == user.organization_id)
     )
@@ -98,6 +101,7 @@ async def update_settings(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(AdminOnly),
 ):
+    await db.refresh(user, ["organization"])
     result = await db.execute(
         select(OrgSettings).where(OrgSettings.organization_id == user.organization_id)
     )
@@ -128,6 +132,7 @@ async def update_organization_settings(
     user: User = Depends(AdminOnly),
 ):
     """Update organization basic info (name, address, phone, email, kra_pin, logo_url)."""
+    await db.refresh(user, ["organization"])
     org = user.organization
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")

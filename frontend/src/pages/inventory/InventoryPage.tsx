@@ -7,8 +7,8 @@ import {
   type CpeDevice, type CpeDeviceCreate, type CpeDeviceAssign,
   type InventoryItem, type InventoryItemCreate,
 } from "@/services/inventory"
-import { listCustomers, type Customer } from "@/services/customers"
-import { listSubscriptions, type Subscription } from "@/services/subscriptions"
+import { listCustomers } from "@/services/customers"
+import { listSubscriptions } from "@/services/subscriptions"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTransition } from "@/components/shared/PageTransition"
 import { DataTable, type Column } from "@/components/shared/DataTable"
@@ -50,8 +50,6 @@ const emptyCpeForm = (): CpeDeviceCreate => ({
 })
 
 export function InventoryPage() {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
   const [activeTab, setActiveTab] = useState("cpe")
 
   return (

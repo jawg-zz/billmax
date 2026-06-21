@@ -5,8 +5,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "BillMax"
     DEBUG: bool = False
     DATABASE_URL: str = "postgresql+asyncpg://billmax:billmax@localhost:5432/billmax"
-    REDIS_URL: str = "redis://localhost:6379/0"
-    SECRET_KEY: str = "change-me-in-production"
+    REDIS_URL: str = "redis://localhost:***@localhost:5432/billmax"
+    REDIS_URL: str = "redis://localhost:***@billmax.ke"
+
     JWT_SECRET: str = "change-me-in-production"
     JWT_LIFETIME_SECONDS: int = 3600
     JWT_REFRESH_LIFETIME_SECONDS: int = 604800
@@ -42,6 +43,39 @@ class Settings(BaseSettings):
     WHATSAPP_API_KEY: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+
+    def load_from_db(self, db_config: dict) -> None:
+        """Override settings from a DB OrgSettings config dict.
+        Called at app startup after the DB is available.
+        """
+        mapping = {
+            "app_name": "APP_NAME",
+            "mpesa_consumer_key": "MPESA_CONSUMER_KEY",
+            "mpesa_consumer_secret": "MPESA_CONSUMER_SECRET",
+            "mpesa_passkey": "MPESA_PASSKEY",
+            "mpesa_shortcode": "MPESA_SHORTCODE",
+            "mpesa_initiator_name": "MPESA_INITIATOR_NAME",
+            "mpesa_security_credential": "MPESA_SECURITY_CREDENTIAL",
+            "mpesa_environment": "MPESA_ENVIRONMENT",
+            "mpesa_callback_url": "MPESA_CALLBACK_URL",
+            "provisioning_backend": "PROVISIONING_BACKEND",
+            "routeros_host": "ROUTEROS_HOST",
+            "routeros_port": "ROUTEROS_PORT",
+            "routeros_username": "ROUTEROS_USERNAME",
+            "routeros_password": "ROUTEROS_PASSWORD",
+            "radius_database_url": "RADIUS_DATABASE_URL",
+            "smtp_host": "SMTP_HOST",
+            "smtp_port": "SMTP_PORT",
+            "smtp_user": "SMTP_USER",
+            "smtp_password": "SMTP_PASSWORD",
+            "smtp_from": "SMTP_FROM",
+            "whatsapp_enabled": "WHATSAPP_ENABLED",
+            "whatsapp_api_url": "WHATSAPP_API_URL",
+            "whatsapp_api_key": "WHATSAPP_API_KEY",
+        }
+        for db_key, attr in mapping.items():
+            if db_key in db_config and db_config[db_key] is not None and db_config[db_key] != "":
+                setattr(self, attr, db_config[db_key])
 
 
 settings = Settings()

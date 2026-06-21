@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.config import settings
+from app.database import engine
+from app.models import *  # noqa: F401,F403
 
 
 @asynccontextmanager
@@ -15,6 +17,20 @@ async def lifespan(app: FastAPI):
             sentry_sdk.init(dsn=settings.SENTRY_DSN, traces_sample_rate=0.1)
         except ImportError:
             pass
+
+    # Load DB-persisted settings (admin-configured) on startup.
+    # These override env-var defaults so the Settings UI is authoritative.
+    try:
+        from sqlalchemy import select
+        from app.models.settings import OrgSettings
+        async with engine.connect() as conn:
+            result = await conn.execute(select(OrgSettings).limit(1))
+            row = result.scalar_one_or_none()
+            if row and row.config:
+                settings.load_from_db(row.config)
+    except Exception:
+        pass  # DB not ready yet or table doesn't exist — use env defaults
+
     yield
 
 

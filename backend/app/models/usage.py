@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,9 +22,9 @@ class UsageRecord(Base):
     )
     period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    download_bytes: Mapped[int] = mapped_column(Integer, default=0)
-    upload_bytes: Mapped[int] = mapped_column(Integer, default=0)
-    total_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    download_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
+    upload_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
+    total_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
     source: Mapped[str] = mapped_column(String(50), default="api")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

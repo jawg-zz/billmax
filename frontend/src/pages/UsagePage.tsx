@@ -86,7 +86,7 @@ export function UsagePage() {
         {isLoading ? (
           <CardSkeleton count={4} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <Card className="transition-all hover:shadow-md">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Active Subscribers</CardTitle>
@@ -151,14 +151,14 @@ export function UsagePage() {
           </Card>
         )}
 
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="relative w-full sm:flex-1 sm:max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by customer or plan..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8"
+              className="pl-8 w-full"
             />
           </div>
           <span className="text-sm text-muted-foreground">{filtered?.length ?? 0} results</span>

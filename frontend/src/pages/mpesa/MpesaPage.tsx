@@ -44,7 +44,7 @@ export function MpesaPage() {
           description="Transactions will appear here when customers pay or when you send STK Push requests"
         />
       ) : (
-        <DataTable columns={columns} data={data ?? []} loading={isLoading} pageSize={25} />
+        <DataTable columns={columns} data={data ?? []} loading={isLoading} pageSize={25} minWidth="600px" />
       )}
     </PageTransition>
   )

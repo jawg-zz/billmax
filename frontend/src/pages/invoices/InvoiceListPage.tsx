@@ -81,7 +81,7 @@ function InvoiceActions({ invoice }: { invoice: Invoice }) {
                     { value: "cash", label: "Cash" },
                   ]} value={payMethod} onChange={(e) => setPayMethod(e.target.value)} />
                 </FormField>
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
                   <Button type="button" variant="outline" onClick={() => setPayOpen(false)}>Cancel</Button>
                   <Button type="submit" disabled={payMut.isPending}>Record Payment</Button>
                 </div>
@@ -101,7 +101,7 @@ function InvoiceActions({ invoice }: { invoice: Invoice }) {
             <FormField label="Customer M-Pesa Phone" required>
               <Input value={mpesaPhone} onChange={(e) => setMpesaPhone(e.target.value)} placeholder="2547XXXXXXXX" required />
             </FormField>
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setMpesaOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={mpesaMut.isPending || !mpesaPhone}>
                 {mpesaMut.isPending ? "Sending..." : "Send STK Push"}
@@ -123,7 +123,7 @@ export function InvoiceListPage() {
   const columns: Column<Invoice>[] = [
     { key: "invoice_number", header: "Invoice #", sortable: true },
     {
-      key: "customer", header: "Customer", sortable: true,
+      key: "customer", header: "Customer", sortable: true, hideOnMobile: true,
       sortValue: (i) => { const c = custMap.get(i.customer_id); return c ? `${c.first_name} ${c.last_name}` : "" },
       cell: (i) => {
         const c = custMap.get(i.customer_id)
@@ -152,7 +152,7 @@ export function InvoiceListPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-6">Invoices are generated automatically when billing runs</p>
         </div>
       ) : (
-        <DataTable columns={columns} data={invoices ?? []} loading={isLoading} pageSize={25} />
+        <DataTable columns={columns} data={invoices ?? []} loading={isLoading} pageSize={25} minWidth="700px" />
       )}
     </PageTransition>
   )

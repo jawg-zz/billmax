@@ -66,7 +66,7 @@ export function DashboardPage() {
       {isLoading ? (
         <CardSkeleton count={6} />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-6">
           <StatsCard title="Customers" value={stats?.total_customers ?? 0} icon={Users} color="text-blue-600" />
           <StatsCard title="Active Subs" value={stats?.active_subscriptions ?? 0} icon={Radio} color="text-green-600" />
           <StatsCard title="Outstanding" value={`KES ${(stats?.total_outstanding ?? 0).toLocaleString()}`} icon={Receipt} color="text-orange-600" />
@@ -76,7 +76,7 @@ export function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold text-foreground">Revenue (6 months)</CardTitle>
@@ -128,7 +128,7 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold text-foreground">Recent Activity</CardTitle>

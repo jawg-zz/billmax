@@ -66,7 +66,7 @@ export function TicketListPage() {
       },
     },
     {
-      key: "created_at", header: "Date", sortable: true,
+      key: "created_at", header: "Date", sortable: true, hideOnMobile: true,
       sortValue: (t) => t.created_at,
       cell: (t) => new Date(t.created_at).toLocaleDateString(),
     },
@@ -114,7 +114,7 @@ export function TicketListPage() {
                     required
                   />
                 </FormField>
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
                   <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
                   <Button type="submit" disabled={createMut.isPending}>Create Ticket</Button>
                 </div>
@@ -141,7 +141,7 @@ export function TicketListPage() {
           action={filter ? undefined : { label: "New Ticket", onClick: () => setOpen(true) }}
         />
       ) : (
-        <DataTable columns={columns} data={data ?? []} loading={isLoading} pageSize={20} />
+        <DataTable columns={columns} data={data ?? []} loading={isLoading} pageSize={20} minWidth="600px" />
       )}
     </PageTransition>
   )

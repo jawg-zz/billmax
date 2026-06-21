@@ -50,7 +50,7 @@ export function UsersPage() {
           description="Staff users can be added through the admin panel"
         />
       ) : (
-        <DataTable columns={columns} data={data ?? []} loading={isLoading} emptyMessage="No users found" pageSize={50} />
+        <DataTable columns={columns} data={data ?? []} loading={isLoading} emptyMessage="No users found" pageSize={50} minWidth="600px" />
       )}
     </PageTransition>
   )

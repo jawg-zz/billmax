@@ -91,7 +91,7 @@ export function PlanListPage() {
       <FormField label="Plan Name" error={errors.name} required>
         <Input value={form.name} onChange={(e) => { setForm({ ...form, name: e.target.value }); setErrors({ ...errors, name: undefined }) }} placeholder="e.g. Fiber 20Mbps" />
       </FormField>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField label="Type" required>
           <select
             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -109,7 +109,7 @@ export function PlanListPage() {
           </select>
         </FormField>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField label="Download (Mbps)" error={errors.download_speed_mbps} required>
           <Input type="number" value={form.download_speed_mbps} onChange={(e) => { setForm({ ...form, download_speed_mbps: +e.target.value }); setErrors({ ...errors, download_speed_mbps: undefined }) }} min={1} />
         </FormField>
@@ -117,7 +117,7 @@ export function PlanListPage() {
           <Input type="number" value={form.upload_speed_mbps} onChange={(e) => setForm({ ...form, upload_speed_mbps: +e.target.value })} min={1} />
         </FormField>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField label="Price (KES)" error={errors.price} required>
           <Input type="number" value={form.price} onChange={(e) => { setForm({ ...form, price: +e.target.value }); setErrors({ ...errors, price: undefined }) }} min={1} />
         </FormField>
@@ -178,7 +178,7 @@ export function PlanListPage() {
               <DialogHeader><DialogTitle>Create Plan</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); if (validate()) createMut.mutate() }} className="space-y-4">
                 {formContent}
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
                   <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
                   <Button type="submit" disabled={createMut.isPending}>Create</Button>
                 </div>
@@ -196,7 +196,7 @@ export function PlanListPage() {
           action={{ label: "New Plan", onClick: () => setCreateOpen(true) }}
         />
       ) : (
-        <DataTable columns={columns} data={data ?? []} loading={isLoading} pageSize={15} />
+        <DataTable columns={columns} data={data ?? []} loading={isLoading} pageSize={15} minWidth="600px" />
       )}
 
       <Dialog open={!!editTarget} onOpenChange={(o) => { if (!o) { setEditTarget(null); setForm(emptyForm()); setErrors({}) } }}>
@@ -204,10 +204,10 @@ export function PlanListPage() {
           <DialogHeader><DialogTitle>Edit Plan — {editTarget?.name}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); if (validate()) updateMut.mutate() }} className="space-y-4">
             {formContent}
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => { setEditTarget(null); setForm(emptyForm()); setErrors({}) }}>Cancel</Button>
-              <Button type="submit" disabled={updateMut.isPending}>Save Changes</Button>
-            </div>
+                <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" onClick={() => { setEditTarget(null); setForm(emptyForm()); setErrors({}) }}>Cancel</Button>
+                  <Button type="submit" disabled={updateMut.isPending}>Save Changes</Button>
+                </div>
           </form>
         </DialogContent>
       </Dialog>

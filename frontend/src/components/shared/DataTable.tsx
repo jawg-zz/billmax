@@ -9,6 +9,7 @@ export interface Column<T> {
   className?: string
   sortable?: boolean
   sortValue?: (item: T) => string | number
+  hideOnMobile?: boolean
 }
 
 interface DataTableProps<T> {
@@ -19,6 +20,8 @@ interface DataTableProps<T> {
   emptyMessage?: string
   pageSize?: number
   onRowClick?: (item: T) => void
+  responsive?: boolean
+  minWidth?: string
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -29,6 +32,8 @@ export function DataTable<T extends Record<string, any>>({
   emptyMessage = "No items found",
   pageSize = 20,
   onRowClick,
+  responsive = true,
+  minWidth,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
@@ -84,19 +89,20 @@ export function DataTable<T extends Record<string, any>>({
 
   return (
     <div className="rounded-md border overflow-hidden bg-card">
-      <div className="overflow-x-auto relative">
-        <table className="w-full">
+      <div className={cn("overflow-x-auto relative", responsive && "-mx-3 md:mx-0")}>
+        <table className="w-full" style={minWidth ? { minWidth } : undefined}>
           <thead>
             <tr className="border-b bg-muted/50 sticky top-0 z-10">
               {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={cn(
-                    "text-left text-xs font-medium text-muted-foreground px-4 py-3 whitespace-nowrap",
-                    col.sortable && "cursor-pointer select-none hover:bg-muted/80 transition-colors",
-                  )}
-                  onClick={() => col.sortable && handleSort(col.key)}
-                >
+                  <th
+                    key={col.key}
+                    className={cn(
+                      "text-left text-xs font-medium text-muted-foreground px-4 py-3 whitespace-nowrap",
+                      col.sortable && "cursor-pointer select-none hover:bg-muted/80 transition-colors",
+                      col.hideOnMobile && "hidden md:table-cell",
+                    )}
+                    onClick={() => col.sortable && handleSort(col.key)}
+                  >
                   <div className="flex items-center gap-1.5">
                     {col.header}
                     {col.sortable && (
@@ -133,7 +139,7 @@ export function DataTable<T extends Record<string, any>>({
                   onClick={() => onRowClick?.(item)}
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className={cn("px-4 py-3 text-sm", col.className)}>
+                    <td key={col.key} className={cn("px-4 py-3 text-sm", col.className, col.hideOnMobile && "hidden md:table-cell")}>
                       {col.cell ? col.cell(item) : item[col.key]}
                     </td>
                   ))}
@@ -145,8 +151,8 @@ export function DataTable<T extends Record<string, any>>({
       </div>
 
       {sorted.length > pageSize && (
-        <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30 text-sm">
-          <span className="text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between px-3 md:px-4 py-3 border-t bg-muted/30 text-sm gap-2">
+          <span className="hidden sm:inline text-muted-foreground">
             {sorted.length} result{sorted.length !== 1 ? "s" : ""}
             {pageSize < sorted.length && (
               <> · showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, sorted.length)}</>
@@ -175,7 +181,7 @@ export function DataTable<T extends Record<string, any>>({
                 <button
                   key={pageNum}
                   className={cn(
-                    "px-2.5 py-1 rounded text-sm font-medium transition-colors",
+                    "px-1.5 md:px-2.5 py-0.5 md:py-1 rounded text-sm font-medium transition-colors",
                     page === pageNum
                       ? "bg-primary text-primary-foreground"
                       : "hover:bg-muted text-muted-foreground",

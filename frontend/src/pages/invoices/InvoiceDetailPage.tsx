@@ -73,7 +73,7 @@ export function InvoiceDetailPage() {
       <PageHeader
         title={`Invoice ${invoice.invoice_number}`}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {invoice.status !== "paid" && (
               <>
                 <Button variant="outline" size="sm" onClick={() => sendMut.mutate()}>
@@ -104,38 +104,38 @@ export function InvoiceDetailPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/60">
-                  <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
-                  <th className="text-right px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Qty</th>
-                  <th className="text-right px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider tabular-nums">Unit Price</th>
-                  <th className="text-right px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider tabular-nums">Total</th>
+                  <th className="text-left px-3 md:px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
+                  <th className="text-right px-3 md:px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Qty</th>
+                  <th className="text-right px-3 md:px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider tabular-nums">Unit Price</th>
+                  <th className="text-right px-3 md:px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider tabular-nums">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {invoice.items.map((item) => (
                   <tr key={item.id} className="border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
-                    <td className="px-6 py-3">{item.description}</td>
-                    <td className="text-right px-6 py-3 tabular-nums">{item.quantity}</td>
-                    <td className="text-right px-6 py-3 tabular-nums">KES {item.unit_price.toLocaleString()}</td>
-                    <td className="text-right px-6 py-3 tabular-nums font-medium">KES {item.total.toLocaleString()}</td>
+                    <td className="px-3 md:px-6 py-3">{item.description}</td>
+                    <td className="text-right px-3 md:px-6 py-3 tabular-nums">{item.quantity}</td>
+                    <td className="text-right px-3 md:px-6 py-3 tabular-nums">KES {item.unit_price.toLocaleString()}</td>
+                    <td className="text-right px-3 md:px-6 py-3 tabular-nums font-medium">KES {item.total.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="border-t border-border/60">
-                  <td colSpan={3} className="text-right px-6 pt-4 pb-1 text-sm text-muted-foreground">Subtotal</td>
-                  <td className="text-right px-6 pt-4 pb-1 text-sm tabular-nums">KES {invoice.subtotal.toLocaleString()}</td>
+                  <td colSpan={3} className="text-right px-3 md:px-6 pt-4 pb-1 text-sm text-muted-foreground">Subtotal</td>
+                  <td className="text-right px-3 md:px-6 pt-4 pb-1 text-sm tabular-nums">KES {invoice.subtotal.toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td colSpan={3} className="text-right px-6 py-1 text-sm text-muted-foreground">VAT (16%)</td>
-                  <td className="text-right px-6 py-1 text-sm tabular-nums">KES {invoice.vat_amount.toLocaleString()}</td>
+                  <td colSpan={3} className="text-right px-3 md:px-6 py-1 text-sm text-muted-foreground">VAT (16%)</td>
+                  <td className="text-right px-3 md:px-6 py-1 text-sm tabular-nums">KES {invoice.vat_amount.toLocaleString()}</td>
                 </tr>
                 <tr className="border-t border-border/40">
-                  <td colSpan={3} className="text-right px-6 pt-3 pb-1 text-base font-bold">Total</td>
-                  <td className="text-right px-6 pt-3 pb-1 text-base font-bold tabular-nums">KES {invoice.total.toLocaleString()}</td>
+                  <td colSpan={3} className="text-right px-3 md:px-6 pt-3 pb-1 text-base font-bold">Total</td>
+                  <td className="text-right px-3 md:px-6 pt-3 pb-1 text-base font-bold tabular-nums">KES {invoice.total.toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td colSpan={3} className="text-right px-6 py-1 text-sm">Balance Due</td>
-                  <td className="text-right px-6 py-1 text-sm font-semibold tabular-nums">KES {invoice.balance_due.toLocaleString()}</td>
+                  <td colSpan={3} className="text-right px-3 md:px-6 py-1 text-sm">Balance Due</td>
+                  <td className="text-right px-3 md:px-6 py-1 text-sm font-semibold tabular-nums">KES {invoice.balance_due.toLocaleString()}</td>
                 </tr>
               </tfoot>
             </table>

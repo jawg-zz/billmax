@@ -78,9 +78,11 @@ export function TicketDetailPage() {
       <PageHeader
         title={ticket.subject}
         actions={
-          <Button variant="outline" onClick={() => navigate("/tickets")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />Back
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => navigate("/tickets")}>
+              <ArrowLeft className="h-4 w-4 mr-2" />Back
+            </Button>
+          </div>
         }
       />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

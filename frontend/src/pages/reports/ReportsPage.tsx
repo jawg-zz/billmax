@@ -32,7 +32,7 @@ export function ReportsPage() {
   return (
     <PageTransition>
       <PageHeader title="Reports" description="Business analytics and tax summaries" />
-      <div className="flex gap-1 mb-6 border-b pb-1">
+      <div className="flex gap-1 mb-6 border-b pb-1 overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.key}

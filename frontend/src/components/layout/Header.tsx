@@ -17,11 +17,11 @@ export function Header() {
       </div>
       <div className="flex items-center gap-2">
         {user && (
-          <div className="hidden sm:flex items-center gap-2 mr-2">
+          <div className="flex sm:flex items-center gap-2 mr-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
               {user.email?.charAt(0).toUpperCase()}
             </div>
-            <div className="text-right">
+            <div className="hidden sm:block text-right">
               <p className="text-xs font-medium leading-tight">{user.email}</p>
               <p className="text-[10px] text-muted-foreground capitalize leading-tight">{user.role}</p>
             </div>

@@ -78,13 +78,15 @@ export function SubscriptionDetailPage() {
       <PageHeader
         title={`${plan?.name ?? "Subscription"} — ${customer?.first_name ?? ""} ${customer?.last_name ?? ""}`}
         actions={
-          <Button variant="outline" onClick={() => navigate("/subscriptions")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />Back
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => navigate("/subscriptions")}>
+              <ArrowLeft className="h-4 w-4 mr-2" />Back
+            </Button>
+          </div>
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
         <Card>
           <CardContent className="flex items-start gap-3 p-4">
             <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">

@@ -73,8 +73,8 @@ export function CustomerListPage() {
       ),
     },
     { key: "phone", header: "Phone", sortable: true },
-    { key: "email", header: "Email", sortable: true },
-    { key: "id_number", header: "ID No." },
+    { key: "email", header: "Email", sortable: true, hideOnMobile: true },
+    { key: "id_number", header: "ID No.", hideOnMobile: true },
     {
       key: "status", header: "Status", sortable: true,
       cell: (c) => <StatusBadge status={c.status} />,
@@ -115,24 +115,26 @@ export function CustomerListPage() {
         actions={<Button onClick={() => navigate("/customers/new")}><Plus className="h-4 w-4 mr-2" />New Customer</Button>}
       />
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        <div className="relative w-full sm:flex-1 sm:min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            className="pl-9"
+            className="pl-9 w-full"
             placeholder="Search by name, phone, or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Button key="all" variant={statusFilter === "" ? "default" : "outline"} size="sm" onClick={() => setStatusFilter("")}>
-          All ({data?.length ?? 0})
-        </Button>
-        {allStatuses.map((s) => (
-          <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)}>
-            {s.charAt(0).toUpperCase() + s.slice(1)} ({statusCounts[s] ?? 0})
+        <div className="flex flex-wrap gap-2">
+          <Button key="all" variant={statusFilter === "" ? "default" : "outline"} size="sm" onClick={() => setStatusFilter("")}>
+            All ({data?.length ?? 0})
           </Button>
-        ))}
+          {allStatuses.map((s) => (
+            <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)}>
+              {s.charAt(0).toUpperCase() + s.slice(1)} ({statusCounts[s] ?? 0})
+            </Button>
+          ))}
+        </div>
       </div>
 
       {!isLoading && filtered.length === 0 ? (
@@ -143,7 +145,7 @@ export function CustomerListPage() {
           action={search || statusFilter ? undefined : { label: "New Customer", onClick: () => navigate("/customers/new") }}
         />
       ) : (
-        <DataTable columns={columns} data={filtered} loading={isLoading} emptyMessage="No customers found" />
+        <DataTable columns={columns} data={filtered} loading={isLoading} emptyMessage="No customers found" minWidth="600px" />
       )}
     </PageTransition>
   )

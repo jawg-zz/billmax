@@ -27,7 +27,7 @@ export function StatsCard({ title, value, icon: Icon, color, subtitle, trend, tr
 
   return (
     <Card className="card-hover border-border/50 bg-card overflow-hidden">
-      <CardContent className="p-5">
+      <CardContent className="p-3 md:p-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <p className="stats-label">{title}</p>
@@ -50,8 +50,8 @@ export function StatsCard({ title, value, icon: Icon, color, subtitle, trend, tr
               </div>
             )}
           </div>
-          <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-sm", gradient)}>
-            <Icon className="h-5 w-5 text-white" />
+          <div className={cn("flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-sm", gradient)}>
+            <Icon className="h-4 w-4 md:h-5 md:w-5 text-white" />
           </div>
         </div>
       </CardContent>

@@ -58,7 +58,7 @@ export function InventoryPage() {
         title="Inventory"
         description="Manage CPE devices and stock"
       />
-      <div className="flex gap-1 mb-6 border-b pb-1">
+      <div className="flex gap-1 mb-6 border-b pb-1 overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -160,7 +160,7 @@ function CpeDevicesTab() {
   const columns: Column<CpeDevice>[] = [
     { key: "serial_number", header: "Serial", sortable: true },
     { key: "model", header: "Model", sortable: true },
-    { key: "device_type", header: "Type", sortable: true },
+    { key: "device_type", header: "Type", sortable: true, hideOnMobile: true },
     { key: "status", header: "Status", sortable: true,
       cell: (d) => {
         const colors: Record<string, string> = {
@@ -209,7 +209,7 @@ function CpeDevicesTab() {
       <FormField label="Serial Number" required>
         <Input value={form.serial_number} onChange={(e) => setForm({ ...form, serial_number: e.target.value })} placeholder="e.g. SN-001" />
       </FormField>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField label="Model" required>
           <Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} placeholder="e.g. RB750" />
         </FormField>
@@ -217,7 +217,7 @@ function CpeDevicesTab() {
           <Input value={form.manufacturer} onChange={(e) => setForm({ ...form, manufacturer: e.target.value })} placeholder="e.g. MikroTik" />
         </FormField>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField label="Device Type" required>
           <Select options={DEVICE_TYPES} value={form.device_type} onChange={(e) => setForm({ ...form, device_type: e.target.value })} />
         </FormField>
@@ -244,7 +244,7 @@ function CpeDevicesTab() {
               <DialogHeader><DialogTitle>Add CPE Device</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); createMut.mutate() }} className="space-y-4">
                 {formContent}
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
                   <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
                   <Button type="submit" disabled={createMut.isPending}>Create</Button>
                 </div>
@@ -261,7 +261,7 @@ function CpeDevicesTab() {
           action={{ label: "Add Device", onClick: () => setCreateOpen(true) }}
         />
       ) : (
-        <DataTable columns={columns} data={devices ?? []} loading={isLoading} pageSize={15} />
+        <DataTable columns={columns} data={devices ?? []} loading={isLoading} pageSize={15} minWidth="700px" />
       )}
 
       <Dialog open={!!editTarget} onOpenChange={(o) => { if (!o) { setEditTarget(null); setForm(emptyCpeForm()) } }}>
@@ -269,7 +269,7 @@ function CpeDevicesTab() {
           <DialogHeader><DialogTitle>Edit Device — {editTarget?.serial_number}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); updateMut.mutate() }} className="space-y-4">
             {formContent}
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => { setEditTarget(null); setForm(emptyCpeForm()) }}>Cancel</Button>
               <Button type="submit" disabled={updateMut.isPending}>Save Changes</Button>
             </div>
@@ -299,7 +299,7 @@ function CpeDevicesTab() {
                 onChange={(e) => setAssignForm({ ...assignForm, subscription_id: e.target.value })}
               />
             </FormField>
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => { setAssignTarget(null); setAssignForm({ customer_id: "", subscription_id: "" }) }}>Cancel</Button>
               <Button onClick={() => assignMut.mutate()} disabled={assignMut.isPending || !assignForm.customer_id || !assignForm.subscription_id}>Assign</Button>
             </div>
@@ -360,7 +360,7 @@ function StockTab() {
 
   const columns: Column<InventoryItem>[] = [
     { key: "name", header: "Name", sortable: true },
-    { key: "category", header: "Category", sortable: true },
+    { key: "category", header: "Category", sortable: true, hideOnMobile: true },
     {
       key: "quantity_in_stock", header: "Qty In Stock", sortable: true,
       sortValue: (i) => i.quantity_in_stock,
@@ -435,7 +435,7 @@ function StockTab() {
                 <FormField label="Notes">
                   <Input value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optional" />
                 </FormField>
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
                   <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
                   <Button type="submit" disabled={createMut.isPending}>Create</Button>
                 </div>
@@ -452,7 +452,7 @@ function StockTab() {
           action={{ label: "Add Stock Item", onClick: () => setCreateOpen(true) }}
         />
       ) : (
-        <DataTable columns={columns} data={dataWithClass} loading={isLoading} pageSize={15} />
+        <DataTable columns={columns} data={dataWithClass} loading={isLoading} pageSize={15} minWidth="600px" />
       )}
 
       <Dialog open={!!editTarget} onOpenChange={(o) => { if (!o) { setEditTarget(null); setForm({ name: "", category: "", quantity_in_stock: 0, unit_cost: 0, min_stock_level: 0 }) } }}>
@@ -465,7 +465,7 @@ function StockTab() {
             <FormField label="Category" required>
               <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
             </FormField>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="Quantity" required>
                 <Input type="number" value={form.quantity_in_stock} onChange={(e) => setForm({ ...form, quantity_in_stock: +e.target.value })} min={0} />
               </FormField>
@@ -473,7 +473,7 @@ function StockTab() {
                 <Input type="number" value={form.unit_cost} onChange={(e) => setForm({ ...form, unit_cost: +e.target.value })} min={0} />
               </FormField>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="Supplier">
                 <Input value={form.supplier ?? ""} onChange={(e) => setForm({ ...form, supplier: e.target.value })} />
               </FormField>
@@ -484,7 +484,7 @@ function StockTab() {
             <FormField label="Notes">
               <Input value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </FormField>
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => { setEditTarget(null); setForm({ name: "", category: "", quantity_in_stock: 0, unit_cost: 0, min_stock_level: 0 }) }}>Cancel</Button>
               <Button type="submit" disabled={updateMut.isPending}>Save Changes</Button>
             </div>

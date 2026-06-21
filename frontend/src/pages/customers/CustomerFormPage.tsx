@@ -84,15 +84,17 @@ export function CustomerFormPage() {
       <PageHeader
         title={isEdit ? "Edit Customer" : "New Customer"}
         actions={
-          <Button variant="outline" onClick={() => navigate(isEdit ? `/customers/${id}` : "/customers")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />Back
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => navigate(isEdit ? `/customers/${id}` : "/customers")}>
+              <ArrowLeft className="h-4 w-4 mr-2" />Back
+            </Button>
+          </div>
         }
       />
       <Card className="max-w-2xl">
-        <CardContent className="pt-6">
+        <CardContent className="p-4 md:p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="First Name" error={errors.first_name} required>
                 <Input value={form.first_name} onChange={(e) => update("first_name", e.target.value)} placeholder="John" />
               </FormField>
@@ -106,7 +108,7 @@ export function CustomerFormPage() {
             <FormField label="Email">
               <Input type="email" value={form.email ?? ""} onChange={(e) => update("email", e.target.value)} placeholder="john@example.com" />
             </FormField>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="ID Number">
                 <Input value={form.id_number ?? ""} onChange={(e) => update("id_number", e.target.value)} placeholder="12345678" />
               </FormField>
@@ -123,7 +125,7 @@ export function CustomerFormPage() {
             <FormField label="Service Address">
               <Input value={form.service_address ?? ""} onChange={(e) => update("service_address", e.target.value)} placeholder="Installation address" />
             </FormField>
-            <div className="flex gap-2 pt-4 border-t">
+            <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
               <Button type="submit" disabled={saving}>
                 {saving ? "Saving..." : isEdit ? "Save Changes" : "Create Customer"}
               </Button>

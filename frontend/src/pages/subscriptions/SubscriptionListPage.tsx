@@ -91,9 +91,9 @@ export function SubscriptionListPage() {
       key: "status", header: "Status", sortable: true,
       cell: (s) => <StatusBadge status={s.status} />,
     },
-    { key: "next_billing_date", header: "Next Billing", sortable: true },
+    { key: "next_billing_date", header: "Next Billing", sortable: true, hideOnMobile: true },
     {
-      key: "provisioned", header: "Network",
+      key: "provisioned", header: "Network", hideOnMobile: true,
       cell: (s) => s.provisioned
         ? <span className="inline-flex items-center gap-1 text-green-600 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-green-600" />Active</span>
         : <span className="text-muted-foreground">—</span>,
@@ -148,7 +148,7 @@ export function SubscriptionListPage() {
           action={{ label: "New Subscription", onClick: () => setCreateOpen(true) }}
         />
       ) : (
-        <DataTable columns={columns} data={subs ?? []} loading={isLoading} pageSize={20} />
+        <DataTable columns={columns} data={subs ?? []} loading={isLoading} pageSize={20} minWidth="700px" />
       )}
 
       <Dialog open={!!speedSub} onOpenChange={(o) => { if (!o) setSpeedSub(null) }}>
@@ -164,7 +164,7 @@ export function SubscriptionListPage() {
                 required
               />
             </FormField>
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setSpeedSub(null)}>Cancel</Button>
               <Button type="submit" disabled={speedMut.isPending}>Change Plan</Button>
             </div>
@@ -197,7 +197,7 @@ export function SubscriptionListPage() {
             <FormField label="Next Billing Date" required>
               <Input type="date" value={form.next_billing_date} onChange={(e) => setForm({ ...form, next_billing_date: e.target.value })} required />
             </FormField>
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={createMut.isPending}>Create Subscription</Button>
             </div>

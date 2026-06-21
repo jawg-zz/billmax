@@ -1,7 +1,10 @@
+import csv
 from datetime import date
+from io import StringIO
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, func, extract
+from fastapi.responses import StreamingResponse
+from sqlalchemy import case, extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -131,6 +134,34 @@ async def collections_report(
         )
     ) or 0, 1)
 
+    monthly_result = await db.execute(
+        select(
+            extract("year", Invoice.issue_date).label("year"),
+            extract("month", Invoice.issue_date).label("month"),
+            func.sum(Invoice.total).label("billed"),
+            func.sum(case((Invoice.status == "paid", Invoice.total), else_=0)).label("collected"),
+            func.sum(case((Invoice.status != "paid", Invoice.balance_due), else_=0)).label("outstanding"),
+        )
+        .where(
+            Invoice.organization_id == org_id,
+            Invoice.issue_date >= fr,
+            Invoice.issue_date <= to,
+        )
+        .group_by(extract("year", Invoice.issue_date), extract("month", Invoice.issue_date))
+        .order_by(extract("year", Invoice.issue_date), extract("month", Invoice.issue_date))
+        .limit(24)
+    )
+
+    monthly_data = [
+        {
+            "label": f"{['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][int(r.month)]} {int(r.year)}",
+            "billed": float(r.billed),
+            "collected": float(r.collected),
+            "outstanding": float(r.outstanding),
+        }
+        for r in monthly_result.all()
+    ]
+
     return {
         "report": "collections",
         "from": str(fr),
@@ -142,6 +173,7 @@ async def collections_report(
         "overdue_invoices": overdue or 0,
         "paid_invoices": paid or 0,
         "total_invoices": total_inv,
+        "monthly": monthly_data,
     }
 
 
@@ -301,3 +333,47 @@ async def tax_report(
             "total_with_vat": sum(float(r.total) for r in rows),
         },
     }
+
+
+@router.get("/export/{report_type}")
+async def export_report(
+    report_type: str,
+    from_date: date | None = Query(None),
+    to_date: date | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(AnyStaff),
+):
+    """Export a report as CSV."""
+    output = StringIO()
+    writer = csv.writer(output)
+
+    if report_type == "revenue":
+        writer.writerow(["Month", "Revenue", "VAT", "Invoice Count"])
+        data = await revenue_report(from_date=from_date, to_date=to_date, db=db, user=user)
+        for m in data["months"]:
+            writer.writerow([m["label"], m["revenue"], m["vat"], m["invoice_count"]])
+
+    elif report_type == "collections":
+        writer.writerow(["Metric", "Value"])
+        data = await collections_report(from_date=from_date, to_date=to_date, db=db, user=user)
+        for key in ("total_billed", "total_collected", "total_outstanding", "collection_rate", "overdue_invoices", "paid_invoices", "total_invoices"):
+            writer.writerow([key.replace("_", " ").title(), data.get(key, "")])
+
+    elif report_type == "tax":
+        writer.writerow(["Month", "Subtotal", "VAT (16%)", "Total", "Invoices"])
+        data = await tax_report(from_date=from_date, to_date=to_date, db=db, user=user)
+        for m in data["months"]:
+            writer.writerow([m["label"], m["subtotal"], m["vat_16"], m["total"], m["invoice_count"]])
+
+    elif report_type == "plans":
+        writer.writerow(["Plan", "Type", "Price", "Speed", "Subscribers", "Monthly Revenue"])
+        data = await plan_report(db=db, user=user)
+        for p in data["plans"]:
+            writer.writerow([p["name"], p["type"], p["price"], p["speed"], p["subscribers"], p["monthly_revenue"]])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={report_type}_report.csv"},
+    )

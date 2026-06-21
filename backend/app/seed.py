@@ -402,14 +402,14 @@ async def seed():
                               is_internal=True))
         db.add(TicketComment(ticket_id=tickets_data[2].id, user_id=billing.id,
                               comment="I've reviewed the account. The duplicate charge was due to a system error during the billing run. I've reversed one charge and your balance is now correct. Apologies for the inconvenience."))
-        db.add(TicketComment(ticket_id=tickets_data[2].id, user_id=customers_data[4].id,
+        db.add(TicketComment(ticket_id=tickets_data[2].id, user_id=billing.id,
                               comment="Thank you for the quick response. I can see the corrected balance now."))
         db.add(TicketComment(ticket_id=tickets_data[3].id, user_id=tech.id,
                               comment="Installation completed successfully. Samuel is now active on Fiber 10Mbps. Running at full speed.",
                               is_internal=True))
         db.add(TicketComment(ticket_id=tickets_data[5].id, user_id=billing.id,
                               comment="Found the issue — the M-Pesa callback timed out. I've manually reconciled the payment. Your invoice shows as paid now."))
-        db.add(TicketComment(ticket_id=tickets_data[5].id, user_id=customers_data[8].id,
+        db.add(TicketComment(ticket_id=tickets_data[5].id, user_id=billing.id,
                               comment="Confirmed, I can see it's paid now. Thank you!"))
 
         # ── Usage Records ──────────────────────────────────────────────

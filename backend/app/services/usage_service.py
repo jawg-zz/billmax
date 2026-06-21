@@ -89,7 +89,7 @@ async def get_usage_summary(
         plan_result = await db.execute(select(Plan).where(Plan.id == sub.plan_id))
         plan = plan_result.scalar_one_or_none()
 
-        total_gb = row.total_bytes / (1024**3) if row.total_bytes else 0
+        total_gb = float(row.total_bytes / (1024**3)) if row.total_bytes else 0
         data_cap_gb = float(plan.data_cap_gb) if plan and plan.data_cap_gb else None
         usage_percent = (total_gb / data_cap_gb * 100) if data_cap_gb and data_cap_gb > 0 else 0
 

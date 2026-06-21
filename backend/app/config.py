@@ -5,9 +5,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "BillMax"
     DEBUG: bool = False
     DATABASE_URL: str = "postgresql+asyncpg://billmax:billmax@localhost:5432/billmax"
-    REDIS_URL: str = "redis://localhost:***@localhost:5432/billmax"
-    REDIS_URL: str = "redis://localhost:***@billmax.ke"
-
+    REDIS_URL: str = "redis://localhost:6379/0"
+    SECRET_KEY: str = "change-me-in-production"
     JWT_SECRET: str = "change-me-in-production"
     JWT_LIFETIME_SECONDS: int = 3600
     JWT_REFRESH_LIFETIME_SECONDS: int = 604800
@@ -38,16 +37,9 @@ class Settings(BaseSettings):
 
     RADIUS_DATABASE_URL: str = ""
 
-    WHATSAPP_ENABLED: bool = False
-    WHATSAPP_API_URL: str = ""
-    WHATSAPP_API_KEY: str = ""
-
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
     def load_from_db(self, db_config: dict) -> None:
-        """Override settings from a DB OrgSettings config dict.
-        Called at app startup after the DB is available.
-        """
+        """Override settings from a DB OrgSettings config dict."""
         mapping = {
             "app_name": "APP_NAME",
             "mpesa_consumer_key": "MPESA_CONSUMER_KEY",
@@ -76,6 +68,8 @@ class Settings(BaseSettings):
         for db_key, attr in mapping.items():
             if db_key in db_config and db_config[db_key] is not None and db_config[db_key] != "":
                 setattr(self, attr, db_config[db_key])
+
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
 settings = Settings()

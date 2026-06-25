@@ -24,7 +24,7 @@ class Subscription(Base):
         UUID(as_uuid=True), ForeignKey("plans.id"), nullable=False
     )
     status: Mapped[str] = mapped_column(
-        String(20), default="active", nullable=False
+        String(20), default="active", nullable=False, index=True
     )
     start_date: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

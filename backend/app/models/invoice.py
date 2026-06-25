@@ -24,7 +24,7 @@ class Invoice(Base):
         UUID(as_uuid=True), ForeignKey("subscriptions.id")
     )
     invoice_number: Mapped[str] = mapped_column(
-        String(50), nullable=False
+        String(50), nullable=False, unique=True
     )
     issue_date: Mapped[date] = mapped_column(Date, nullable=False)
     due_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -33,7 +33,7 @@ class Invoice(Base):
     total: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     balance_due: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     status: Mapped[str] = mapped_column(
-        String(20), default="draft", nullable=False
+        String(20), default="draft", nullable=False, index=True
     )
     notes: Mapped[str | None] = mapped_column(Text)
     kra_etims_code: Mapped[str | None] = mapped_column(String(100))

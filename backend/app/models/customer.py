@@ -19,7 +19,7 @@ class Customer(Base):
     )
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    phone: Mapped[str] = mapped_column(String(20), nullable=False)
+    phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     email: Mapped[str | None] = mapped_column(String(255))
     id_number: Mapped[str | None] = mapped_column(String(20))
     kra_pin: Mapped[str | None] = mapped_column(String(20))
@@ -29,7 +29,7 @@ class Customer(Base):
     location_lng: Mapped[float | None] = mapped_column()
     service_address: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(
-        String(20), default="active", nullable=False
+        String(20), default="active", nullable=False, index=True
     )
     mpesa_phone: Mapped[str | None] = mapped_column(String(20))
     portal_password: Mapped[str | None] = mapped_column(String(255))

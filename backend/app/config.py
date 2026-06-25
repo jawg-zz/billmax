@@ -37,6 +37,16 @@ class Settings(BaseSettings):
 
     RADIUS_DATABASE_URL: str = ""
 
+    SMTP_HOST: str = "localhost"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "noreply@billmax.ke"
+
+    WHATSAPP_ENABLED: bool = False
+    WHATSAPP_API_URL: str = ""
+    WHATSAPP_API_KEY: str = ""
+
 
     def load_from_db(self, db_config: dict) -> None:
         """Override settings from a DB OrgSettings config dict."""
@@ -70,7 +80,10 @@ class Settings(BaseSettings):
                 try:
                     setattr(self, attr, db_config[db_key])
                 except ValueError:
-                    pass  # field not defined on Settings model yet
+                    import logging
+                    logging.getLogger("billmax").warning(
+                        "load_from_db: skipping '%s' — not defined on Settings model", attr
+                    )
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

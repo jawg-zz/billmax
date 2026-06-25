@@ -88,7 +88,7 @@ async def list_comments(
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
     is_admin = user.role == "admin"
-    return await service.get_comments(ticket_id, include_internal=is_admin)
+    return await service.get_comments(ticket_id, organization_id=user.organization_id, include_internal=is_admin)
 
 
 @router.post("/{ticket_id}/comments", response_model=TicketCommentRead, status_code=201)
@@ -102,4 +102,4 @@ async def add_comment(
     ticket = await service.get(ticket_id, user.organization_id)
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
-    return await service.add_comment(ticket_id, data, user_id=user.id)
+    return await service.add_comment(ticket_id, data, organization_id=user.organization_id, user_id=user.id)

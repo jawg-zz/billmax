@@ -18,7 +18,7 @@ async def next_invoice_number(
             SequenceNumber.organization_id == organization_id,
             SequenceNumber.prefix == prefix,
             SequenceNumber.year == year,
-        )
+        ).with_for_update()
     )
     seq = result.scalar_one_or_none()
 

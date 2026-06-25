@@ -160,7 +160,7 @@ async def check_fup_enforcement(
     organization_id: uuid.UUID,
 ) -> list[dict]:
     alerts = []
-    since = datetime.utcnow() - timedelta(days=30)
+    since = datetime.now(timezone.utc) - timedelta(days=30)
 
     result = await db.execute(
         select(Subscription).where(
@@ -233,7 +233,6 @@ async def check_fup_enforcement(
                                 upload_speed=max(1, plan.fup_speed_mbps // 2),
                             )
 
-    if alerts:
-        await db.commit()
+    await db.commit()
 
     return alerts

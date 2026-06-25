@@ -120,8 +120,6 @@ async def handle_stk_callback(
                 if name == "MpesaReceiptNumber":
                     mpesa_tx.receipt_number = str(value)
                     mpesa_tx.transaction_id = str(value)
-                elif name == "TransactionDate":
-                    mpesa_tx.transaction_id = str(value)
 
             if mpesa_tx.invoice_id:
                 inv_service = InvoiceService(db)

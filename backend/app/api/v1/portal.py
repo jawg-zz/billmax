@@ -35,13 +35,17 @@ async def portal_login(
     data: PortalLoginRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Customer).where(Customer.phone == data.phone))
-    customer = result.scalar_one_or_none()
+    result = await db.execute(
+        select(Customer).where(Customer.phone == data.phone)
+    )
+    customers = result.scalars().all()
+    # In multi-org, phone may match across orgs — try each
+    customer = None
+    for c in customers:
+        if c.portal_password and verify_password(data.password, c.portal_password):
+            customer = c
+            break
     if not customer:
-        raise HTTPException(status_code=401, detail="Invalid phone or password")
-    if not customer.portal_password:
-        raise HTTPException(status_code=401, detail="Portal access not set up. Contact support.")
-    if not verify_password(data.password, customer.portal_password):
         raise HTTPException(status_code=401, detail="Invalid phone or password")
 
     token = create_portal_token(customer.id)

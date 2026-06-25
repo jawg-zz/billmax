@@ -41,12 +41,14 @@ async def process_overdue(
         org_result = await db.execute(
             select(Organization).where(Organization.id == invoice.organization_id)
         )
-        org = org_result.scalar_one()
+        org = org_result.scalar_one_or_none()
+        if not org:
+            continue
 
         cust_result = await db.execute(
             select(Customer).where(Customer.id == invoice.customer_id)
         )
-        customer = cust_result.scalar_one()
+        customer = cust_result.scalar_one_or_none()
         if not customer or not customer.email:
             continue
 

@@ -75,10 +75,13 @@ class TicketService:
         return ticket
 
     async def add_comment(
-        self, ticket_id: uuid.UUID, data, user_id: uuid.UUID | None = None
+        self, ticket_id: uuid.UUID, data, organization_id: uuid.UUID, user_id: uuid.UUID | None = None
     ) -> TicketComment | None:
         result = await self.db.execute(
-            select(Ticket).where(Ticket.id == ticket_id)
+            select(Ticket).where(
+                Ticket.id == ticket_id,
+                Ticket.organization_id == organization_id,
+            )
         )
         ticket = result.scalar_one_or_none()
         if not ticket:
@@ -97,10 +100,11 @@ class TicketService:
         return comment
 
     async def get_comments(
-        self, ticket_id: uuid.UUID, include_internal: bool = False
+        self, ticket_id: uuid.UUID, organization_id: uuid.UUID, include_internal: bool = False
     ) -> "list[TicketComment]":
-        query = select(TicketComment).where(
-            TicketComment.ticket_id == ticket_id
+        query = select(TicketComment).join(Ticket).where(
+            TicketComment.ticket_id == ticket_id,
+            Ticket.organization_id == organization_id,
         )
         if not include_internal:
             query = query.where(TicketComment.is_internal == False)

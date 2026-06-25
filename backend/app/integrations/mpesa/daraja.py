@@ -58,6 +58,7 @@ class DarajaClient:
                 headers={"Authorization": f"Bearer {token}"},
                 timeout=30,
             )
+            resp.raise_for_status()
             data = resp.json()
             return data
 

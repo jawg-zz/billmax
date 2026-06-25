@@ -40,13 +40,12 @@ def _calculate_prorated_price(
     next_billing_date: date,
 ) -> float:
     days_in_cycle = CYCLE_DAYS.get(cycle, 30)
-    billing_start = start_date if start_date > next_billing_date else next_billing_date
-    days_until_next_billing = (next_billing_date - billing_start).days
-    if days_until_next_billing <= 0:
+    # Days actually used in the current billing period
+    days_used = (next_billing_date - start_date).days
+    if days_used >= days_in_cycle or days_used <= 0:
         return price
-    remaining_days = days_until_next_billing
     daily_rate = price / days_in_cycle
-    return round(remaining_days * daily_rate, 2)
+    return round(days_used * daily_rate, 2)
 
 
 async def run_billing(
@@ -70,12 +69,14 @@ async def run_billing(
         plan_result = await db.execute(
             select(Plan).where(Plan.id == sub.plan_id)
         )
-        plan = plan_result.scalar_one()
+        plan = plan_result.scalar_one_or_none()
+        if not plan:
+            continue
 
         cust_result = await db.execute(
             select(Customer).where(Customer.id == sub.customer_id)
         )
-        customer = cust_result.scalar_one()
+        customer = cust_result.scalar_one_or_none()
         if not customer:
             continue
 
@@ -83,7 +84,7 @@ async def run_billing(
             db, organization_id, sub, plan, customer, target
         )
         if invoice:
-            sub.next_billing_date = _add_billing_cycle(target, plan.billing_cycle)
+            sub.next_billing_date = _add_billing_cycle(sub.next_billing_date, plan.billing_cycle)
             created_invoices.append(invoice)
 
     await db.commit()
@@ -97,7 +98,7 @@ async def run_billing(
             cust_result = await db.execute(
                 select(Customer).where(Customer.id == inv.customer_id)
             )
-            customer = cust_result.scalar_one()
+            customer = cust_result.scalar_one_or_none()
             if customer and customer.email:
                 sent = await invoice_service.send_invoice_email(inv.id, organization_id)
                 if sent:
@@ -123,8 +124,10 @@ async def _generate_invoice(
     due_date = issue_date + timedelta(days=7)
     price = float(plan.price)
 
-    # Prorate if this is the first billing or mid-cycle
-    if subscription.start_date.date() > subscription.next_billing_date:
+    # Fix the proration condition: trigger when subscriber hasn't had a full cycle
+    days_since_start = (subscription.next_billing_date - subscription.start_date.date()).days
+    cycle_days = CYCLE_DAYS.get(plan.billing_cycle, 30)
+    if 0 < days_since_start < cycle_days:
         price = _calculate_prorated_price(
             price, plan.billing_cycle,
             subscription.start_date.date(),
@@ -207,12 +210,14 @@ async def preview_billing(
         plan_result = await db.execute(
             select(Plan).where(Plan.id == sub.plan_id)
         )
-        plan = plan_result.scalar_one()
+        plan = plan_result.scalar_one_or_none()
+        if not plan:
+            continue
 
         cust_result = await db.execute(
             select(Customer).where(Customer.id == sub.customer_id)
         )
-        customer = cust_result.scalar_one()
+        customer = cust_result.scalar_one_or_none()
         if not customer:
             continue
 

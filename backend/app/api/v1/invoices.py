@@ -86,7 +86,9 @@ async def record_payment(
 ):
     service = InvoiceService(db)
     payment = await service.record_payment(
-        invoice_id, data.amount, data.payment_method, data.transaction_code
+        invoice_id, data.amount, data.payment_method,
+        organization_id=user.organization_id,
+        transaction_code=data.transaction_code
     )
     if not payment:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -111,12 +113,16 @@ async def download_invoice_pdf(
     result = await db.execute(
         select(Organization).where(Organization.id == user.organization_id)
     )
-    org = result.scalar_one()
+    org = result.scalar_one_or_none()
+    if not org:
+        raise HTTPException(status_code=500, detail="Organization not found")
 
     cust_result = await db.execute(
         select(Customer).where(Customer.id == invoice.customer_id)
     )
-    customer = cust_result.scalar_one()
+    customer = cust_result.scalar_one_or_none()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
 
     items_result = await db.execute(
         select(InvoiceItem).where(InvoiceItem.invoice_id == invoice.id)

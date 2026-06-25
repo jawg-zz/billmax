@@ -67,6 +67,16 @@ class InvoiceService:
             )
             self.db.add(item)
 
+        # Recompute aggregate VAT and total from per-item sums to avoid rounding drift
+        item_tax_sum = sum(
+            calculate_total_with_vat(item_data.unit_price * item_data.quantity)[1]
+            if item_data.is_taxable else 0.0
+            for item_data in data.items
+        )
+        invoice.vat_amount = round(item_tax_sum, 2)
+        invoice.total = round(invoice.subtotal + invoice.vat_amount, 2)
+        invoice.balance_due = invoice.total
+
         await self.db.commit()
         await self.db.refresh(invoice)
         return invoice
@@ -115,10 +125,16 @@ class InvoiceService:
         invoice_id: uuid.UUID,
         amount: float,
         payment_method: str,
+        organization_id: uuid.UUID,
         transaction_code: str | None = None,
         notes: str | None = None,
     ) -> Payment | None:
-        result = await self.db.execute(select(Invoice).where(Invoice.id == invoice_id))
+        result = await self.db.execute(
+            select(Invoice).where(
+                Invoice.id == invoice_id,
+                Invoice.organization_id == organization_id,
+            )
+        )
         invoice = result.scalar_one_or_none()
         if not invoice:
             return None
@@ -135,9 +151,13 @@ class InvoiceService:
         )
         self.db.add(payment)
 
-        invoice.balance_due = max(0.0, float(invoice.balance_due) - amount)
+        previous_balance = float(invoice.balance_due)
+        invoice.balance_due = max(0.0, previous_balance - amount)
+        overpayment = max(0.0, amount - previous_balance)
         if invoice.balance_due == 0.0:
             invoice.status = "paid"
+            if overpayment > 0:
+                payment.notes = (notes or "") + f" (Overpayment of {overpayment:.2f} KES)"
         elif invoice.status != "partially_paid":
             invoice.status = "partially_paid"
 
@@ -165,12 +185,14 @@ class InvoiceService:
         org_result = await self.db.execute(
             select(Organization).where(Organization.id == organization_id)
         )
-        org = org_result.scalar_one()
+        org = org_result.scalar_one_or_none()
+        if not org:
+            return False
 
         cust_result = await self.db.execute(
             select(Customer).where(Customer.id == invoice.customer_id)
         )
-        customer = cust_result.scalar_one()
+        customer = cust_result.scalar_one_or_none()
         if not customer.email:
             return False
 

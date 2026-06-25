@@ -111,7 +111,16 @@ async def process_overdue(
         )
         db.add(notification)
 
-        if customer.phone:
+        # Deduplicate WhatsApp notifications — check if one was already sent today
+        existing_notif = await db.execute(
+            select(Notification).where(
+                Notification.customer_id == customer.id,
+                Notification.invoice_id == invoice.id,
+                Notification.channel == "whatsapp",
+                Notification.sent_at >= today,
+            )
+        )
+        if customer.phone and not existing_notif.scalar_one_or_none():
             whatsapp_sent = await send_whatsapp(
                 db,
                 organization_id=invoice.organization_id,

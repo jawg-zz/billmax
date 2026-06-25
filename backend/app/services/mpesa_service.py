@@ -112,7 +112,10 @@ async def handle_stk_callback(
 
         callback_items = callback_data.get("CallbackMetadata", {}).get("Item", [])
 
-        if str(result_code) in ("0", "0"):
+        if str(result_code) == "0":
+            # Guard against duplicate callbacks — only process once
+            if mpesa_tx.status == "completed":
+                return {"success": True, "status": mpesa_tx.status, "message": "Already processed"}
             mpesa_tx.status = "completed"
             for item in callback_items:
                 name = item.get("Name")
@@ -127,6 +130,7 @@ async def handle_stk_callback(
                     invoice_id=mpesa_tx.invoice_id,
                     amount=float(mpesa_tx.amount),
                     payment_method="mpesa",
+                    organization_id=mpesa_tx.organization_id,
                     transaction_code=mpesa_tx.receipt_number or mpesa_tx.transaction_id,
                     notes="Auto-matched from STK callback",
                 )
@@ -207,6 +211,7 @@ async def handle_c2b_confirmation(
                 invoice_id=invoice_id,
                 amount=amount,
                 payment_method="mpesa",
+                organization_id=org.id,
                 transaction_code=trans_id,
                 notes="C2B confirmation",
             )

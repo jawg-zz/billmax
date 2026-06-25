@@ -8,13 +8,28 @@ from app.config import settings
 
 class DarajaClient:
     def __init__(self):
-        self.consumer_key = settings.MPESA_CONSUMER_KEY
-        self.consumer_secret = settings.MPESA_CONSUMER_SECRET
-        self.passkey = settings.MPESA_PASSKEY
-        self.shortcode = settings.MPESA_SHORTCODE
-        self.environment = settings.MPESA_ENVIRONMENT
         self._token: str | None = None
         self._token_expiry: datetime | None = None
+
+    @property
+    def consumer_key(self) -> str:
+        return settings.MPESA_CONSUMER_KEY
+
+    @property
+    def consumer_secret(self) -> str:
+        return settings.MPESA_CONSUMER_SECRET
+
+    @property
+    def passkey(self) -> str:
+        return settings.MPESA_PASSKEY
+
+    @property
+    def shortcode(self) -> str:
+        return settings.MPESA_SHORTCODE
+
+    @property
+    def environment(self) -> str:
+        return settings.MPESA_ENVIRONMENT
 
     @property
     def base_url(self) -> str:

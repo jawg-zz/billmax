@@ -89,19 +89,21 @@ async def approve_customer(
     await db.commit()
     await db.refresh(customer)
 
+    # Get org name and portal URL for notifications
+    from app.config import settings
+    from app.models.organization import Organization
+    org_result = await db.execute(
+        select(Organization).where(Organization.id == user.organization_id)
+    )
+    org = org_result.scalar_one_or_none()
+    org_name = org.name if org else "BillMax"
+    portal_url = settings.PORTAL_URL or ""
+
     # Send welcome email if customer has email address
     if customer.email:
         try:
             from app.services.pdf_service import render_email_template
             from app.services.email_service import send_email
-            from app.models.organization import Organization
-            org_result = await db.execute(
-                select(Organization).where(Organization.id == user.organization_id)
-            )
-            org = org_result.scalar_one_or_none()
-            org_name = org.name if org else "BillMax"
-            from app.config import settings
-            portal_url = settings.PORTAL_URL or ""
             html_body = render_email_template(
                 "welcome.html",
                 customer_name=f"{customer.first_name} {customer.last_name}",
@@ -116,6 +118,20 @@ async def approve_customer(
             )
         except Exception:
             pass  # email failure shouldn't block approval
+    else:
+        # WhatsApp fallback for customers without email
+        try:
+            from app.services.whatsapp_service import send_whatsapp
+            message = (
+                f"Dear {customer.first_name}, your account with {org_name} has been activated. "
+                f"You can log in to the portal at {portal_url or 'your ISP portal'}."
+            )
+            await send_whatsapp(
+                db, organization_id=user.organization_id, customer_id=customer.id,
+                recipient=customer.phone, message=message,
+            )
+        except Exception:
+            pass
 
     response = CustomerRead.model_validate(customer).model_dump()
     response["provisioning"] = {

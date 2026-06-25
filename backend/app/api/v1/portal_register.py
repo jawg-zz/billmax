@@ -143,6 +143,28 @@ async def portal_register(
     await db.commit()
     await db.refresh(customer)
 
+    # Notify admin email if configured
+    from app.config import settings as app_settings
+    if app_settings.NOTIFICATION_EMAIL:
+        try:
+            from app.services.pdf_service import render_email_template
+            from app.services.email_service import send_email
+            html = render_email_template(
+                "new_registration.html",
+                customer_name=f"{data.first_name} {data.last_name}",
+                phone=data.phone,
+                email=data.email or "—",
+                plan_name=plan.name,
+                org_name=org.name,
+            )
+            await send_email(
+                to=app_settings.NOTIFICATION_EMAIL,
+                subject=f"New registration: {data.first_name} {data.last_name}",
+                html_body=html,
+            )
+        except Exception:
+            pass
+
     return {
         "message": "Registration successful. An administrator will activate your account shortly.",
         "customer_id": str(customer.id),
@@ -161,3 +183,21 @@ async def portal_resend_activation(
     if not customer:
         raise HTTPException(status_code=404, detail="No pending registration found for this phone")
     return {"message": "Your registration is still pending review. Please contact support."}
+
+
+@router.get("/register/status")
+async def portal_registration_status(
+    phone: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """Check registration status without logging in."""
+    result = await db.execute(
+        select(Customer).where(Customer.phone == phone)
+    )
+    customer = result.scalar_one_or_none()
+    if not customer:
+        raise HTTPException(status_code=404, detail="No registration found for this phone number")
+    return {
+        "status": customer.status,
+        "name": f"{customer.first_name} {customer.last_name}",
+    }

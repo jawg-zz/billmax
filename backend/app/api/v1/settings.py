@@ -51,6 +51,8 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "whatsapp_api_key": "",
     # Portal
     "portal_url": "",
+    # Notifications
+    "notification_email": "",
 }
 
 

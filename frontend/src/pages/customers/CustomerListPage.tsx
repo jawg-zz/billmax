@@ -30,9 +30,15 @@ export function CustomerListPage() {
 
   const approveMut = useMutation({
     mutationFn: (id: string) => approveCustomer(id),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["customers"] })
-      toast("success", "Customer approved")
+      if (data?.provisioning?.success === false) {
+        toast("warning", "Customer approved", `Provisioning failed: ${data.provisioning.error || "Unknown error"}`)
+      } else if (data?.provisioning?.success === true) {
+        toast("success", "Customer approved", "Subscription provisioned on network equipment")
+      } else {
+        toast("success", "Customer approved")
+      }
     },
     onError: () => toast("error", "Failed to approve customer"),
   })

@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     WHATSAPP_ENABLED: bool = False
     WHATSAPP_API_URL: str = ""
     WHATSAPP_API_KEY: str = ""
+    NOTIFICATION_EMAIL: str = ""
 
     PORTAL_URL: str = ""
 
@@ -99,6 +100,7 @@ class Settings(BaseSettings):
             "whatsapp.api_url": "WHATSAPP_API_URL",
             "whatsapp.api_key": "WHATSAPP_API_KEY",
             "portal_url": "PORTAL_URL",
+            "notification_email": "NOTIFICATION_EMAIL",
         }
         for db_key, attr in mapping.items():
             value = _get(db_config, db_key)

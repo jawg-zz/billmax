@@ -119,6 +119,10 @@ async def update_settings(
     await db.commit()
     await db.refresh(settings_row)
 
+    # Reload settings into the running application so changes take effect immediately
+    from app.config import settings
+    settings.load_from_db(settings_row.config)
+
     return {
         "message": "Settings saved successfully",
         "config": settings_row.config,

@@ -62,7 +62,7 @@ class DarajaClient:
             resp.raise_for_status()
             data = resp.json()
             self._token = data["access_token"]
-            expires_in = data.get("expires_in", 3600)
+            expires_in = int(data.get("expires_in", 3600))
             self._token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in - 60)
             return self._token
 

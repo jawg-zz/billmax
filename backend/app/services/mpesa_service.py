@@ -32,6 +32,9 @@ async def initiate_stk_push(
     if not customer:
         return {"success": False, "error": "Customer not found"}
 
+    if amount <= 0:
+        return {"success": False, "error": "Amount must be greater than 0"}
+
     invoice_ref = ""
     if invoice_id:
         inv_result = await db.execute(
@@ -46,12 +49,18 @@ async def initiate_stk_push(
 
     account_ref = invoice_ref or f"CUST{customer.id.hex[:8].upper()}"
 
-    daraja_resp = await client.stk_push(
-        phone=phone,
-        amount=amount,
-        account_reference=account_ref,
-        transaction_desc=f"Payment {account_ref}",
-    )
+    try:
+        daraja_resp = await client.stk_push(
+            phone=phone,
+            amount=amount,
+            account_reference=account_ref,
+            transaction_desc=f"Payment {account_ref}",
+        )
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"M-Pesa API error: {str(e)[:200]}",
+        }
 
     mpesa_tx = MpesaTransaction(
         organization_id=organization_id,

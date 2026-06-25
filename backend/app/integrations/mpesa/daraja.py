@@ -7,29 +7,32 @@ from app.config import settings
 
 
 class DarajaClient:
-    def __init__(self):
+    def __init__(
+        self,
+        consumer_key: str,
+        consumer_secret: str,
+        passkey: str,
+        shortcode: str,
+        environment: str,
+    ):
+        self.consumer_key = consumer_key
+        self.consumer_secret = consumer_secret
+        self.passkey = passkey
+        self.shortcode = shortcode
+        self.environment = environment
         self._token: str | None = None
         self._token_expiry: datetime | None = None
 
-    @property
-    def consumer_key(self) -> str:
-        return settings.MPESA_CONSUMER_KEY
-
-    @property
-    def consumer_secret(self) -> str:
-        return settings.MPESA_CONSUMER_SECRET
-
-    @property
-    def passkey(self) -> str:
-        return settings.MPESA_PASSKEY
-
-    @property
-    def shortcode(self) -> str:
-        return settings.MPESA_SHORTCODE
-
-    @property
-    def environment(self) -> str:
-        return settings.MPESA_ENVIRONMENT
+    @classmethod
+    def from_settings(cls) -> "DarajaClient":
+        """Factory that reads current settings. Call fresh for each request."""
+        return cls(
+            consumer_key=settings.MPESA_CONSUMER_KEY,
+            consumer_secret=settings.MPESA_CONSUMER_SECRET,
+            passkey=settings.MPESA_PASSKEY,
+            shortcode=settings.MPESA_SHORTCODE,
+            environment=settings.MPESA_ENVIRONMENT,
+        )
 
     @property
     def base_url(self) -> str:

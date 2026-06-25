@@ -25,3 +25,8 @@ BillingStaff = require_role("admin", "billing")
 SupportStaff = require_role("admin", "support")
 TechStaff = require_role("admin", "tech")
 AnyStaff = require_role("admin", "billing", "support", "tech")
+
+
+async def get_daraja_client() -> "DarajaClient":
+    from app.integrations.mpesa.daraja import DarajaClient
+    return DarajaClient.from_settings()

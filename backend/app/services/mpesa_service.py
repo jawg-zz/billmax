@@ -11,8 +11,6 @@ from app.models.mpesa import MpesaTransaction
 from app.models.organization import Organization
 from app.services.invoice_service import InvoiceService
 
-client = DarajaClient()
-
 
 async def initiate_stk_push(
     db: AsyncSession,
@@ -21,6 +19,7 @@ async def initiate_stk_push(
     customer_id: uuid.UUID,
     phone: str,
     amount: float,
+    client: "DarajaClient",
 ) -> dict:
     result = await db.execute(
         select(Customer).where(
@@ -241,6 +240,7 @@ async def handle_c2b_validation(body: dict) -> dict:
 async def query_transaction_status(
     db: AsyncSession,
     checkout_request_id: str,
+    client: "DarajaClient",
 ) -> dict:
     daraja_resp = await client.query_status(checkout_request_id)
 
@@ -280,7 +280,10 @@ async def list_transactions(
     return list(result.scalars().all())
 
 
-async def reconcile_pending(db: AsyncSession) -> list[dict]:
+async def reconcile_pending(
+    db: AsyncSession,
+    client: "DarajaClient",
+) -> list[dict]:
     result = await db.execute(
         select(MpesaTransaction).where(
             MpesaTransaction.status == "pending",

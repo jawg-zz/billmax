@@ -180,6 +180,8 @@ async def portal_pay_invoice(
         raise HTTPException(status_code=400, detail="Invoice already paid")
 
     phone = customer.mpesa_phone or customer.phone
+    from app.integrations.mpesa.daraja import DarajaClient
+    client = DarajaClient.from_settings()
     result = await initiate_stk_push(
         db,
         organization_id=customer.organization_id,
@@ -187,6 +189,7 @@ async def portal_pay_invoice(
         customer_id=customer.id,
         phone=phone,
         amount=float(invoice.balance_due),
+        client=client,
     )
     return result
 

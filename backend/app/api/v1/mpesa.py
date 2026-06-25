@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import AdminOnly, BillingStaff
+from app.dependencies import AdminOnly, BillingStaff, get_daraja_client
 from app.models.user import User
 from app.services.mpesa_service import (
     handle_c2b_confirmation,
@@ -26,6 +26,7 @@ async def stk_push(
     invoice_id: uuid.UUID | None = Query(None),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(BillingStaff),
+    client = Depends(get_daraja_client),
 ):
     result = await initiate_stk_push(
         db,
@@ -34,6 +35,7 @@ async def stk_push(
         customer_id=customer_id,
         phone=phone,
         amount=amount,
+        client=client,
     )
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error"))
@@ -65,8 +67,9 @@ async def mpesa_query(
     checkout_request_id: str = Query(...),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(BillingStaff),
+    client = Depends(get_daraja_client),
 ):
-    result = await query_transaction_status(db, checkout_request_id)
+    result = await query_transaction_status(db, checkout_request_id, client=client)
     return result
 
 

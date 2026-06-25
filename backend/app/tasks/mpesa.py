@@ -19,6 +19,8 @@ def reconcile_mpesa_transactions():
 
 
 async def _reconcile():
+    from app.integrations.mpesa.daraja import DarajaClient
+    client = DarajaClient.from_settings()
     async with async_session() as db:
-        results = await reconcile_pending(db)
+        results = await reconcile_pending(db, client=client)
         print(f"M-Pesa reconciliation: {len(results)} transactions processed")

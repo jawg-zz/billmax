@@ -49,6 +49,8 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "whatsapp_enabled": False,
     "whatsapp_api_url": "",
     "whatsapp_api_key": "",
+    # Portal
+    "portal_url": "",
 }
 
 

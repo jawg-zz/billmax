@@ -52,6 +52,11 @@ async def portal_login(
     if not customer:
         raise HTTPException(status_code=401, detail="Invalid phone or password")
 
+    if customer.status not in ("active", "suspended"):
+        if customer.status == "pending":
+            raise HTTPException(status_code=403, detail="Your account is pending approval. Please wait for an administrator to activate your account.")
+        raise HTTPException(status_code=403, detail="Your account is not active. Please contact support.")
+
     token = create_portal_token(customer.id)
     return {
         "access_token": token,

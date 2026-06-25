@@ -100,10 +100,13 @@ async def approve_customer(
             )
             org = org_result.scalar_one_or_none()
             org_name = org.name if org else "BillMax"
+            from app.config import settings
+            portal_url = settings.PORTAL_URL or ""
             html_body = render_email_template(
                 "welcome.html",
                 customer_name=f"{customer.first_name} {customer.last_name}",
                 org_name=org_name,
+                portal_url=portal_url,
                 portal_login_hint="Use your phone number and the PIN you created during registration.",
             )
             await send_email(

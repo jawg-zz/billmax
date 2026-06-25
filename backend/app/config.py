@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     WHATSAPP_API_URL: str = ""
     WHATSAPP_API_KEY: str = ""
 
+    PORTAL_URL: str = ""
+
 
     def load_from_db(self, db_config: dict) -> None:
         """Override settings from a DB OrgSettings config dict.
@@ -96,6 +98,7 @@ class Settings(BaseSettings):
             "whatsapp.enabled": "WHATSAPP_ENABLED",
             "whatsapp.api_url": "WHATSAPP_API_URL",
             "whatsapp.api_key": "WHATSAPP_API_KEY",
+            "portal_url": "PORTAL_URL",
         }
         for db_key, attr in mapping.items():
             value = _get(db_config, db_key)

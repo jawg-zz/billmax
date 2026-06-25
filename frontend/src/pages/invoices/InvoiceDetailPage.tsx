@@ -79,9 +79,11 @@ export function InvoiceDetailPage() {
                 <Button variant="outline" size="sm" onClick={() => sendMut.mutate()}>
                   <Send className="h-4 w-4 mr-2" />Email
                 </Button>
-                <Button size="sm" onClick={() => setMpesaOpen(true)}>
-                  <Smartphone className="h-4 w-4 mr-2" />M-Pesa Pay
-                </Button>
+                {invoice.balance_due > 0 && (
+                  <Button size="sm" onClick={() => setMpesaOpen(true)}>
+                    <Smartphone className="h-4 w-4 mr-2" />M-Pesa Pay
+                  </Button>
+                )}
               </>
             )}
             <PdfViewer invoiceId={id!} invoiceNumber={invoice.invoice_number}>

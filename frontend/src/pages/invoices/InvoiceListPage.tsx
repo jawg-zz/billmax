@@ -56,7 +56,7 @@ function InvoiceActions({ invoice }: { invoice: Invoice }) {
           <Download className="h-4 w-4" />
         </Button>
       </PdfViewer>
-      {invoice.status !== "paid" && (
+      {invoice.balance_due > 0 && invoice.status !== "paid" && (
         <>
           <Button variant="ghost" size="icon" title="Email Invoice" onClick={() => sendMut.mutate()}>
             <Send className="h-4 w-4" />

@@ -67,7 +67,10 @@ class Settings(BaseSettings):
         }
         for db_key, attr in mapping.items():
             if db_key in db_config and db_config[db_key] is not None and db_config[db_key] != "":
-                setattr(self, attr, db_config[db_key])
+                try:
+                    setattr(self, attr, db_config[db_key])
+                except ValueError:
+                    pass  # field not defined on Settings model yet
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

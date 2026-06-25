@@ -76,18 +76,50 @@ async def approve_customer(
         )
     )
     sub = result.scalar_one_or_none()
+    prov_result = {"success": True, "message": "No subscription to provision"}
     if sub:
         sub.status = "active"
-        # Auto-provision the subscriber on the network equipment
+        # Provision on network equipment
         try:
             from app.services.provisioning_service import provision_subscription
-            await provision_subscription(db, sub.id, user.organization_id)
-        except Exception:
-            pass  # Provisioning failure shouldn't block approval
+            prov_result = await provision_subscription(db, sub.id, user.organization_id)
+        except Exception as e:
+            prov_result = {"success": False, "error": str(e)}
 
     await db.commit()
     await db.refresh(customer)
-    return CustomerRead.model_validate(customer)
+
+    # Send welcome email if customer has email address
+    if customer.email:
+        try:
+            from app.services.pdf_service import render_email_template
+            from app.services.email_service import send_email
+            from app.models.organization import Organization
+            org_result = await db.execute(
+                select(Organization).where(Organization.id == user.organization_id)
+            )
+            org = org_result.scalar_one_or_none()
+            org_name = org.name if org else "BillMax"
+            html_body = render_email_template(
+                "welcome.html",
+                customer_name=f"{customer.first_name} {customer.last_name}",
+                org_name=org_name,
+                portal_login_hint="Use your phone number and the PIN you created during registration.",
+            )
+            await send_email(
+                to=customer.email,
+                subject=f"Welcome to {org_name} — Your account is now active",
+                html_body=html_body,
+            )
+        except Exception:
+            pass  # email failure shouldn't block approval
+
+    response = CustomerRead.model_validate(customer).model_dump()
+    response["provisioning"] = {
+        "success": prov_result.get("success", False),
+        "error": prov_result.get("error"),
+    }
+    return response
 
 
 @router.post("/{customer_id}/reject")

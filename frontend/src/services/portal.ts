@@ -98,6 +98,6 @@ export async function portalRegister(data: {
   service_address?: string
   plan_id: string
 }) {
-  const res = await api.post("/portal/register", null, { params: data })
+  const res = await api.post("/portal/register", data)
   return res.data as { message: string; customer_id: string }
 }

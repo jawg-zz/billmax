@@ -27,7 +27,8 @@ async def _run_billing_for_all_orgs():
     async with async_session() as db:
         result = await db.execute(select(Organization.id))
         org_ids = result.scalars().all()
-        for org_id in org_ids:
+    for org_id in org_ids:
+        async with async_session() as db:
             invoices = await run_billing(db, org_id)
             print(f"Billing run for {org_id}: {len(invoices)} invoices created")
 
@@ -49,5 +50,9 @@ def process_overdue():
 
 async def _process_overdue_for_all():
     async with async_session() as db:
-        actions = await run_overdue_processing(db)
+        result = await db.execute(select(Organization.id))
+        org_ids = result.scalars().all()
+    for org_id in org_ids:
+        async with async_session() as db:
+            actions = await run_overdue_processing(db)
         print(f"Overdue processing: {len(actions)} actions taken")

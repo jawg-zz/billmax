@@ -24,8 +24,9 @@ async def _enforce_fup_for_all_orgs():
     async with async_session() as db:
         result = await db.execute(select(Organization.id))
         org_ids = result.scalars().all()
-        total_alerts = 0
-        for org_id in org_ids:
-            alerts = await check_fup_enforcement(db, org_id)
+    total_alerts = 0
+    for org_id in org_ids:
+        async with async_session() as db_session:
+            alerts = await check_fup_enforcement(db_session, org_id)
             total_alerts += len(alerts)
-        print(f"FUP enforcement: {total_alerts} alerts created across {len(org_ids)} orgs")
+    print(f"FUP enforcement: {total_alerts} alerts created across {len(org_ids)} orgs")

@@ -1,10 +1,13 @@
 import uuid
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.audit_log import AuditLog
 from app.models.customer import Customer
 from app.models.organization import Organization
 from app.models.plan import Plan
@@ -12,6 +15,19 @@ from app.models.subscription import Subscription
 from app.utils.security import hash_password
 
 router = APIRouter(prefix="/portal", tags=["portal"])
+
+
+class PortalRegisterRequest(BaseModel):
+    first_name: str = Field(min_length=1)
+    last_name: str = Field(min_length=1)
+    phone: str = Field(min_length=10)
+    email: str | None = None
+    password: str = Field(min_length=4)
+    id_number: str | None = None
+    physical_address: str | None = None
+    service_address: str | None = None
+    plan_id: uuid.UUID
+    org_id: uuid.UUID | None = None
 
 
 @router.get("/register/plans")
@@ -53,30 +69,32 @@ async def portal_register_plans(
 
 @router.post("/register", status_code=201)
 async def portal_register(
-    first_name: str = Query(...),
-    last_name: str = Query(...),
-    phone: str = Query(...),
-    email: str | None = Query(None),
-    password: str = Query(..., min_length=4),
-    id_number: str | None = Query(None),
-    physical_address: str | None = Query(None),
-    service_address: str | None = Query(None),
-    plan_id: uuid.UUID = Query(...),
+    data: PortalRegisterRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    existing = await db.execute(select(Customer).where(Customer.phone == phone))
+    # Check for duplicate phone
+    existing = await db.execute(select(Customer).where(Customer.phone == data.phone))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Phone number already registered")
 
-    org_result = await db.execute(
-        select(Organization).where(Organization.is_active == True)
-    )
+    # Find org — prefer org_id from request, fall back to first active
+    if data.org_id:
+        org_result = await db.execute(
+            select(Organization).where(
+                Organization.id == data.org_id,
+                Organization.is_active == True,
+            )
+        )
+    else:
+        org_result = await db.execute(
+            select(Organization).where(Organization.is_active == True)
+        )
     org = org_result.scalar_one_or_none()
     if not org:
         raise HTTPException(status_code=500, detail="No active organization found")
 
     plan_result = await db.execute(
-        select(Plan).where(Plan.id == plan_id, Plan.is_active == True)
+        select(Plan).where(Plan.id == data.plan_id, Plan.is_active == True)
     )
     plan = plan_result.scalar_one_or_none()
     if not plan:
@@ -84,20 +102,18 @@ async def portal_register(
 
     customer = Customer(
         organization_id=org.id,
-        first_name=first_name,
-        last_name=last_name,
-        phone=phone,
-        email=email,
-        id_number=id_number,
-        physical_address=physical_address,
-        service_address=service_address,
+        first_name=data.first_name,
+        last_name=data.last_name,
+        phone=data.phone,
+        email=data.email,
+        id_number=data.id_number,
+        physical_address=data.physical_address,
+        service_address=data.service_address,
         status="pending",
-        portal_password=hash_password(password),
+        portal_password=hash_password(data.password),
     )
     db.add(customer)
     await db.flush()
-
-    from datetime import date, timedelta
 
     subscription = Subscription(
         organization_id=org.id,
@@ -108,6 +124,22 @@ async def portal_register(
         auto_renew=True,
     )
     db.add(subscription)
+    await db.flush()
+
+    # Audit log for admin notification
+    audit = AuditLog(
+        organization_id=org.id,
+        action="create",
+        resource_type="registration",
+        resource_id=str(customer.id),
+        new_values={
+            "customer_name": f"{data.first_name} {data.last_name}",
+            "phone": data.phone,
+            "plan": plan.name,
+            "status": "pending",
+        },
+    )
+    db.add(audit)
     await db.commit()
     await db.refresh(customer)
 

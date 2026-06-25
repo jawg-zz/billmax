@@ -44,6 +44,7 @@ async def provision_subscription(
 
     sub.provisioned_username = username
     sub.provisioned = True
+    await db.commit()
 
     results = []
     for backend in get_all_backends():
@@ -99,6 +100,8 @@ async def suspend_subscription(
         return {"success": False, "error": "Not provisioned"}
 
     sub.status = "suspended"
+    await db.commit()
+
     results = []
     for backend in get_all_backends():
         result = await backend.suspend(username=username)
@@ -143,6 +146,8 @@ async def restore_subscription(
         return {"success": False, "error": "Not provisioned"}
 
     sub.status = "active"
+    await db.commit()
+
     results = []
     for backend in get_all_backends():
         result = await backend.restore(username=username)
@@ -195,6 +200,8 @@ async def change_subscription_speed(
         return {"success": False, "error": "Not provisioned"}
 
     sub.plan_id = plan_id
+    await db.commit()
+
     results = []
     for backend in get_all_backends():
         result = await backend.change_speed(
@@ -249,6 +256,7 @@ async def deprovision_subscription(
     sub.status = "cancelled"
     sub.provisioned = False
     sub.provisioned_username = None
+    await db.commit()
 
     results = []
     for backend in get_all_backends():

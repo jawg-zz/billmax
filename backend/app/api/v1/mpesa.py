@@ -21,7 +21,7 @@ router = APIRouter(prefix="/mpesa", tags=["mpesa"])
 @router.post("/stk-push")
 async def stk_push(
     customer_id: uuid.UUID = Query(...),
-    amount: float = Query(...),
+    amount: float = Query(..., gt=0),
     phone: str = Query(...),
     invoice_id: uuid.UUID | None = Query(None),
     db: AsyncSession = Depends(get_db),

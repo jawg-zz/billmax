@@ -1,20 +1,20 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PlanBase(BaseModel):
     name: str
     description: str | None = None
     type: str
-    download_speed_mbps: int
-    upload_speed_mbps: int
+    download_speed_mbps: int = Field(gt=0)
+    upload_speed_mbps: int = Field(gt=0)
     data_cap_gb: int | None = None
     fup_threshold_gb: int | None = None
     fup_speed_mbps: int | None = None
-    price: float
-    setup_fee: float = 0
+    price: float = Field(gt=0)
+    setup_fee: float = Field(ge=0)
     billing_cycle: str = "monthly"
     is_taxable: bool = True
     is_active: bool = True

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PaymentCreate(BaseModel):
@@ -14,7 +14,7 @@ class PaymentCreate(BaseModel):
 
 
 class RecordPaymentRequest(BaseModel):
-    amount: float
+    amount: float = Field(gt=0)
     payment_method: str
     transaction_code: str | None = None
 

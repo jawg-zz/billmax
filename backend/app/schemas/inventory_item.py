@@ -1,16 +1,16 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class InventoryItemBase(BaseModel):
     name: str
     category: str
-    quantity_in_stock: int
-    unit_cost: float
+    quantity_in_stock: int = Field(ge=0)
+    unit_cost: float = Field(ge=0)
     supplier: str | None = None
-    min_stock_level: int = 0
+    min_stock_level: int = Field(ge=0)
     notes: str | None = None
 
 

@@ -16,11 +16,13 @@ router = APIRouter(prefix="/portal", tags=["portal"])
 
 @router.get("/register/plans")
 async def portal_register_plans(
+    org_id: uuid.UUID | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Organization).where(Organization.is_active == True)
-    )
+    query = select(Organization).where(Organization.is_active == True)
+    if org_id:
+        query = query.where(Organization.id == org_id)
+    result = await db.execute(query)
     org = result.scalar_one_or_none()
     if not org:
         raise HTTPException(status_code=500, detail="No active organization found")

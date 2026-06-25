@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -78,6 +78,12 @@ async def approve_customer(
     sub = result.scalar_one_or_none()
     if sub:
         sub.status = "active"
+        # Auto-provision the subscriber on the network equipment
+        try:
+            from app.services.provisioning_service import provision_subscription
+            await provision_subscription(db, sub.id, user.organization_id)
+        except Exception:
+            pass  # Provisioning failure shouldn't block approval
 
     await db.commit()
     await db.refresh(customer)
@@ -105,4 +111,14 @@ async def delete_customer(
     user: User = Depends(AdminOnly),
 ):
     service = CustomerService(db)
-    await service.delete(customer_id, user.organization_id)
+    try:
+        await service.delete(customer_id, user.organization_id)
+    except Exception as e:
+        err = str(e).lower()
+        if "foreign key" in err or "violates foreign" in err:
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot delete customer with existing invoices, subscriptions, or tickets. "
+                       "Cancel all subscriptions and resolve all invoices first.",
+            )
+        raise

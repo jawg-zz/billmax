@@ -1,10 +1,14 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import AdminOnly, AnyStaff, BillingStaff
+from app.models.customer import Customer
+from app.models.plan import Plan
+from app.models.subscription import Subscription
 from app.models.user import User
 from app.schemas.subscription import (
     SubscriptionCreate,
@@ -34,6 +38,25 @@ async def create_subscription(
     user: User = Depends(BillingStaff),
 ):
     service = SubscriptionService(db)
+    # Validate customer and plan belong to this organization
+    from app.models.customer import Customer
+    from app.models.plan import Plan
+    cust = await db.execute(
+        select(Customer).where(
+            Customer.id == data.customer_id,
+            Customer.organization_id == user.organization_id,
+        )
+    )
+    if not cust.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Customer not found in your organization")
+    plan = await db.execute(
+        select(Plan).where(
+            Plan.id == data.plan_id,
+            Plan.organization_id == user.organization_id,
+        )
+    )
+    if not plan.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Plan not found in your organization")
     return await service.create(data, organization_id=user.organization_id)
 
 
@@ -54,6 +77,34 @@ async def update_subscription(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(BillingStaff),
 ):
+    # Validate status transitions
+    VALID_TRANSITIONS = {
+        "active": ["suspended", "cancelled"],
+        "pending": ["active", "cancelled"],
+        "suspended": ["active", "cancelled"],
+        "cancelled": [],
+    }
+    if data.status is not None:
+        # Fetch current subscription to check transition
+        curr = await db.execute(
+            select(Subscription).where(
+                Subscription.id == subscription_id,
+                Subscription.organization_id == user.organization_id,
+            )
+        )
+        current_sub = curr.scalar_one_or_none()
+        if not current_sub:
+            raise HTTPException(status_code=404, detail="Subscription not found")
+        allowed = VALID_TRANSITIONS.get(current_sub.status, [])
+        if data.status not in allowed and data.status != current_sub.status:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot transition from '{current_sub.status}' to '{data.status}'. Allowed: {allowed if allowed else 'none'}",
+            )
+        # If reactivating from cancelled, reject
+        if current_sub.status == "cancelled":
+            raise HTTPException(status_code=400, detail="Cannot update a cancelled subscription")
+
     service = SubscriptionService(db)
     return await service.update(subscription_id, data, user.organization_id)
 

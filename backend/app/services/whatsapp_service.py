@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -14,7 +15,7 @@ async def send_whatsapp(
     recipient: str,
     message: str,
 ) -> bool:
-    if not settings.WHATSAPP_ENABLED:
+    if not settings.WHATSAPP_ENABLED or not settings.WHATSAPP_API_URL:
         notification = Notification(
             organization_id=organization_id,
             customer_id=customer_id,
@@ -23,7 +24,7 @@ async def send_whatsapp(
             body=message,
             channel="whatsapp",
             status="pending",
-            error_message="WhatsApp integration not enabled",
+            error_message="WhatsApp integration not configured",
         )
         db.add(notification)
         return False
@@ -31,11 +32,24 @@ async def send_whatsapp(
     sent = False
     error_message = None
     try:
-        if settings.WHATSAPP_API_URL and settings.WHATSAPP_API_KEY:
-            pass
-        sent = True
+        async with AsyncClient() as client:
+            resp = await client.post(
+                settings.WHATSAPP_API_URL,
+                json={
+                    "to": recipient,
+                    "text": message,
+                },
+                headers={
+                    "Authorization": f"Bearer {settings.WHATSAPP_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                timeout=15,
+            )
+            resp.raise_for_status()
+            sent = True
     except Exception as e:
-        error_message = str(e)
+        error_message = str(e)[:500]
+        sent = False
 
     notification = Notification(
         organization_id=organization_id,

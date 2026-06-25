@@ -85,7 +85,7 @@ class InvoiceService:
         self, invoice_id: uuid.UUID, organization_id: uuid.UUID
     ) -> Invoice | None:
         result = await self.db.execute(
-            select(Invoice).where(
+            select(Invoice).options(selectinload(Invoice.items)).where(
                 Invoice.id == invoice_id,
                 Invoice.organization_id == organization_id,
             )

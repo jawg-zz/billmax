@@ -12,6 +12,22 @@ from app.models.organization import Organization
 from app.services.invoice_service import InvoiceService
 
 
+def _normalize_phone(phone: str) -> str:
+    """Convert Kenyan phone numbers to international format (254...).
+
+    Handles: 0713702904, +254713702904, 254713702904, 0713 702 904
+    """
+    # Strip spaces, dashes, parens
+    cleaned = "".join(c for c in phone if c.isdigit())
+    if cleaned.startswith("0"):
+        cleaned = "254" + cleaned[1:]
+    elif cleaned.startswith("+"):
+        cleaned = cleaned[1:]
+    elif not cleaned.startswith("254"):
+        cleaned = "254" + cleaned
+    return cleaned
+
+
 async def initiate_stk_push(
     db: AsyncSession,
     organization_id: uuid.UUID,
@@ -47,6 +63,9 @@ async def initiate_stk_push(
             invoice_ref = invoice.invoice_number
 
     account_ref = invoice_ref or f"CUST{customer.id.hex[:8].upper()}"
+
+    # Normalize phone to international format for Safaricom API
+    phone = _normalize_phone(phone)
 
     try:
         daraja_resp = await client.stk_push(

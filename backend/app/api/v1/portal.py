@@ -29,6 +29,10 @@ class PortalTicketCreate(BaseModel):
     description: str
     priority: str = "medium"
 
+class PortalChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
 
 @router.post("/login")
 async def portal_login(
@@ -77,14 +81,13 @@ async def portal_me(customer: Customer = Depends(get_portal_customer)):
 
 @router.post("/change-password")
 async def portal_change_password(
-    current_password: str = Query(...),
-    new_password: str = Query(...),
+    data: PortalChangePasswordRequest,
     customer: Customer = Depends(get_portal_customer),
     db: AsyncSession = Depends(get_db),
 ):
-    if not verify_password(current_password, customer.portal_password):
+    if not verify_password(data.current_password, customer.portal_password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
-    customer.portal_password = hash_password(new_password)
+    customer.portal_password = hash_password(data.new_password)
     await db.commit()
     return {"message": "Password changed"}
 

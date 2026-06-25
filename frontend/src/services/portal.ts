@@ -25,7 +25,7 @@ export interface PortalInvoice {
 }
 
 export async function portalLogin(phone: string, password: string) {
-  const res = await api.post("/portal/login", null, { params: { phone, password } })
+  const res = await api.post("/portal/login", { phone, password })
   return res.data as { access_token: string; customer: PortalCustomer }
 }
 
@@ -60,12 +60,12 @@ export async function portalTickets() {
 }
 
 export async function portalCreateTicket(subject: string, description: string, priority = "medium") {
-  const res = await portalApi.post("/portal/tickets", null, { params: { subject, description, priority } })
+  const res = await portalApi.post("/portal/tickets", { subject, description, priority })
   return res.data
 }
 
 export async function portalChangePassword(current_password: string, new_password: string) {
-  const res = await portalApi.post("/portal/change-password", null, { params: { current_password, new_password } })
+  const res = await portalApi.post("/portal/change-password", { current_password, new_password })
   return res.data
 }
 

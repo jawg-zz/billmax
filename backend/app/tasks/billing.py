@@ -3,7 +3,7 @@ from datetime import date
 from app.celery_app import celery_app
 from app.database import async_session
 from app.services.billing_engine import run_billing
-from app.services.dunning import process_overdue
+from app.services.dunning import process_overdue as run_overdue_processing
 from app.models.organization import Organization
 from sqlalchemy import select
 
@@ -33,7 +33,7 @@ async def _run_billing_for_all_orgs():
 
 
 @celery_app.task
-def process_overdue_task():
+def process_overdue():
     import asyncio
     try:
         asyncio.get_running_loop()
@@ -49,5 +49,5 @@ def process_overdue_task():
 
 async def _process_overdue_for_all():
     async with async_session() as db:
-        actions = await process_overdue(db)
+        actions = await run_overdue_processing(db)
         print(f"Overdue processing: {len(actions)} actions taken")

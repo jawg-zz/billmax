@@ -76,8 +76,11 @@ class DarajaClient:
                 headers={"Authorization": f"Bearer {token}"},
                 timeout=30,
             )
-            resp.raise_for_status()
             data = resp.json()
+            if not resp.is_success:
+                raise RuntimeError(
+                    f"M-Pesa API {resp.status_code}: {data.get('errorMessage', data.get('errorCode', data))}"
+                )
             return data
 
     async def stk_push(

@@ -135,10 +135,13 @@ async def _generate_invoice(
         )
 
     invoice_number = await next_invoice_number(db, organization_id)
-    try:
-        total, vat_amount = calculate_total_with_vat(price, taxable=plan.is_taxable)
-    except Exception:
-        total, vat_amount = price, 0.0
+    # plan.price is VAT-inclusive (total). Back out VAT for accounting.
+    if plan.is_taxable:
+        vat_amount = round(price * 16 / 116, 2)
+        subtotal = round(price - vat_amount, 2)
+    else:
+        vat_amount = 0.0
+        subtotal = price
 
     invoice = Invoice(
         organization_id=organization_id,
@@ -147,10 +150,10 @@ async def _generate_invoice(
         invoice_number=invoice_number,
         issue_date=issue_date,
         due_date=due_date,
-        subtotal=price,
+        subtotal=subtotal,
         vat_amount=vat_amount,
-        total=total,
-        balance_due=total,
+        total=price,
+        balance_due=price,
         status="draft",
     )
     db.add(invoice)
@@ -160,29 +163,31 @@ async def _generate_invoice(
         invoice_id=invoice.id,
         description=f"{plan.name} ({plan.download_speed_mbps}/{plan.upload_speed_mbps} Mbps) - {plan.billing_cycle}",
         quantity=1,
-        unit_price=price,
-        total=price,
+        unit_price=subtotal,
+        total=subtotal,
         is_taxable=plan.is_taxable,
         tax_rate=16.00 if plan.is_taxable else 0.0,
         tax_amount=vat_amount,
     )
     db.add(item)
 
-    # Add setup fee on first invoice
+    # Add setup fee on first invoice (VAT-inclusive like plan price)
     if plan.setup_fee > 0:
         setup_price = float(plan.setup_fee)
+        setup_vat = round(setup_price * 16 / 116, 2) if plan.is_taxable else 0.0
+        setup_subtotal = round(setup_price - setup_vat, 2)
         setup_item = InvoiceItem(
             invoice_id=invoice.id,
             description=f"Setup fee - {plan.name}",
             quantity=1,
-            unit_price=setup_price,
-            total=setup_price,
-            is_taxable=True,
-            tax_rate=16.00,
-            tax_amount=0.0,
+            unit_price=setup_subtotal,
+            total=setup_subtotal,
+            is_taxable=plan.is_taxable,
+            tax_rate=16.00 if plan.is_taxable else 0.0,
+            tax_amount=setup_vat,
         )
         db.add(setup_item)
-        invoice.subtotal = float(invoice.subtotal) + setup_price
+        invoice.subtotal = float(invoice.subtotal) + setup_subtotal
         invoice.total = float(invoice.total) + setup_price
         invoice.balance_due = float(invoice.balance_due) + setup_price
 
@@ -222,21 +227,29 @@ async def preview_billing(
             continue
 
         price = float(plan.price)
-        if sub.start_date.date() > sub.next_billing_date:
+        days_since_start = (sub.next_billing_date - sub.start_date.date()).days
+        cycle_days = CYCLE_DAYS.get(plan.billing_cycle, 30)
+        if 0 < days_since_start < cycle_days:
             price = _calculate_prorated_price(
                 price, plan.billing_cycle,
                 sub.start_date.date(),
                 sub.next_billing_date,
             )
 
-        total, vat = calculate_total_with_vat(price, taxable=plan.is_taxable)
+        # plan.price is VAT-inclusive — back out VAT for display
+        if plan.is_taxable:
+            vat = round(price * 16 / 116, 2)
+            subtotal = round(price - vat, 2)
+        else:
+            vat = 0.0
+            subtotal = price
         preview.append({
             "customer_name": f"{customer.first_name} {customer.last_name}",
             "customer_id": str(customer.id),
             "plan_name": plan.name,
-            "price": price,
+            "price": subtotal,
             "vat": vat,
-            "total": total,
+            "total": price,
             "next_billing": sub.next_billing_date.isoformat(),
         })
 

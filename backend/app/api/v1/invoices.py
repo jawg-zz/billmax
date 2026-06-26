@@ -13,6 +13,7 @@ from app.models.organization import Organization
 from app.models.user import User
 from app.schemas.invoice import InvoiceCreate, InvoiceRead
 from app.schemas.payment import RecordPaymentRequest
+from app.services.audit_service import log_audit
 from app.services.invoice_service import InvoiceService
 from app.services.pdf_service import render_invoice_pdf
 
@@ -92,6 +93,10 @@ async def record_payment(
     )
     if not payment:
         raise HTTPException(status_code=404, detail="Invoice not found")
+    await log_audit(db, organization_id=user.organization_id, user_id=user.id,
+                     action="create", resource_type="payment", resource_id=str(payment.id),
+                     new_values={"invoice_id": str(invoice_id), "amount": str(data.amount),
+                                 "method": data.payment_method})
     return {
         "message": "Payment recorded",
         "payment_id": str(payment.id),

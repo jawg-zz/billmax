@@ -16,6 +16,7 @@ from app.schemas.subscription import (
     SubscriptionUpdate,
 )
 from app.services.subscription_service import SubscriptionService
+from app.services.audit_service import log_audit
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
 
@@ -57,7 +58,11 @@ async def create_subscription(
     )
     if not plan.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Plan not found in your organization")
-    return await service.create(data, organization_id=user.organization_id)
+    sub = await service.create(data, organization_id=user.organization_id)
+    await log_audit(db, organization_id=user.organization_id, user_id=user.id,
+                     action="create", resource_type="subscription", resource_id=str(sub.id),
+                     new_values={"customer_id": str(data.customer_id), "plan_id": str(data.plan_id)})
+    return sub
 
 
 @router.get("/{subscription_id}", response_model=SubscriptionRead)
@@ -106,7 +111,11 @@ async def update_subscription(
             raise HTTPException(status_code=400, detail="Cannot update a cancelled subscription")
 
     service = SubscriptionService(db)
-    return await service.update(subscription_id, data, user.organization_id)
+    updated = await service.update(subscription_id, data, user.organization_id)
+    await log_audit(db, organization_id=user.organization_id, user_id=user.id,
+                     action="update", resource_type="subscription", resource_id=str(subscription_id),
+                     new_values=data.model_dump(exclude_unset=True))
+    return updated
 
 
 @router.delete("/{subscription_id}", status_code=204)
@@ -116,4 +125,6 @@ async def delete_subscription(
     user: User = Depends(AdminOnly),
 ):
     service = SubscriptionService(db)
+    await log_audit(db, organization_id=user.organization_id, user_id=user.id,
+                     action="delete", resource_type="subscription", resource_id=str(subscription_id))
     await service.delete(subscription_id, user.organization_id)

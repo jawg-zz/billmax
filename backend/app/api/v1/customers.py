@@ -8,6 +8,7 @@ from app.database import get_db
 from app.dependencies import AdminOnly, AnyStaff
 from app.models.user import User
 from app.schemas.customer import CustomerCreate, CustomerRead, CustomerUpdate
+from app.services.audit_service import log_audit
 from app.services.customer_service import CustomerService
 
 router = APIRouter(prefix="/customers", tags=["customers"])
@@ -89,6 +90,9 @@ async def approve_customer(
     await db.commit()
     await db.refresh(customer)
 
+    await log_audit(db, organization_id=user.organization_id, user_id=user.id,
+                     action="approve", resource_type="customer", resource_id=str(customer_id))
+
     # Get org name and portal URL for notifications
     from app.config import settings
     from app.models.organization import Organization
@@ -152,6 +156,8 @@ async def reject_customer(
     customer.status = "rejected"
     await db.commit()
     await db.refresh(customer)
+    await log_audit(db, organization_id=user.organization_id, user_id=user.id,
+                     action="reject", resource_type="customer", resource_id=str(customer_id))
     return CustomerRead.model_validate(customer)
 
 

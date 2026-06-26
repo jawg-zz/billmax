@@ -10,6 +10,7 @@ from app.database import get_db
 from app.dependencies import AdminOnly
 from app.models.settings import OrgSettings
 from app.models.user import User
+from app.services.audit_service import log_audit
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -126,6 +127,10 @@ async def update_settings(
     # Reload settings into the running application so changes take effect immediately
     from app.config import settings
     settings.load_from_db(settings_row.config)
+
+    await log_audit(db, organization_id=user.organization_id, user_id=user.id,
+                     action="update", resource_type="settings", resource_id=str(settings_row.id),
+                     new_values={"updated_keys": list(data.config.keys())})
 
     return {
         "message": "Settings saved successfully",

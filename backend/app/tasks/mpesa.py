@@ -1,10 +1,13 @@
 from app.celery_app import celery_app
 from app.database import async_session
 from app.services.mpesa_service import reconcile_pending
+from app.logging_config import get_logger
+
+logger = get_logger("tasks.mpesa")
 
 
-@celery_app.task
-def reconcile_mpesa_transactions():
+@celery_app.task(bind=True)
+def reconcile_mpesa_transactions(self):
     import asyncio
     try:
         asyncio.get_running_loop()
@@ -23,4 +26,4 @@ async def _reconcile():
     client = DarajaClient.from_settings()
     async with async_session() as db:
         results = await reconcile_pending(db, client=client)
-        print(f"M-Pesa reconciliation: {len(results)} transactions processed")
+        logger.info("M-Pesa reconciliation: %s transactions processed", len(results))

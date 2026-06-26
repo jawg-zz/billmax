@@ -7,6 +7,9 @@ from sqlalchemy import select, text
 from app.database import async_session, engine, Base
 from app.models import *  # noqa: F401,F403
 from app.models.organization import Organization
+from app.logging_config import get_logger
+
+logger = get_logger("init_db")
 
 
 async def wait_for_db(retries: int = 30, delay: int = 2):
@@ -14,14 +17,14 @@ async def wait_for_db(retries: int = 30, delay: int = 2):
         try:
             async with engine.connect() as conn:
                 await conn.execute(text("SELECT 1"))
-            print(f"Database ready (attempt {attempt})")
+            logger.info("Database ready (attempt %s)", attempt)
             return
         except Exception as e:
             if attempt < retries:
-                print(f"Waiting for database... ({attempt}/{retries})")
+                logger.warning("Waiting for database... (%s/%s)", attempt, retries)
                 await asyncio.sleep(delay)
             else:
-                print(f"Database connection failed: {e}")
+                logger.critical("Database connection failed: %s", e)
                 sys.exit(1)
 
 

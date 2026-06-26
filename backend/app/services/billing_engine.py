@@ -12,6 +12,9 @@ from app.models.subscription import Subscription
 from app.services.sequence_service import next_invoice_number
 from app.services.tax import calculate_total_with_vat
 from app.services.invoice_service import InvoiceService
+from app.logging_config import get_logger
+
+logger = get_logger("billing_engine")
 
 
 CYCLE_DAYS = {
@@ -103,13 +106,13 @@ async def run_billing(
                 sent = await invoice_service.send_invoice_email(inv.id, organization_id)
                 if sent:
                     emailed_count += 1
-                    print(f"  Invoice {inv.invoice_number} emailed to {customer.email}")
+                    logger.info("Invoice %s emailed to %s", inv.invoice_number, customer.email)
                 else:
-                    print(f"  Invoice {inv.invoice_number} email skipped (no SMTP / no email)")
+                    logger.warning("Invoice %s email skipped (no SMTP / no email)", inv.invoice_number)
         except Exception as e:
-            print(f"  Failed to email invoice {inv.invoice_number}: {e}")
+            logger.error("Failed to email invoice %s: %s", inv.invoice_number, e)
 
-    print(f"Billing run: {len(created_invoices)} invoices created, {emailed_count} emailed")
+    logger.info("Billing run: %s invoices created, %s emailed", len(created_invoices), emailed_count)
     return created_invoices
 
 

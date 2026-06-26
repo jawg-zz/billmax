@@ -171,25 +171,30 @@ async def _generate_invoice(
     )
     db.add(item)
 
-    # Add setup fee on first invoice (VAT-inclusive like plan price)
+    # Add setup fee — only on the first invoice (no prior invoices for this subscription)
     if plan.setup_fee > 0:
-        setup_price = float(plan.setup_fee)
-        setup_vat = round(setup_price * 16 / 116, 2) if plan.is_taxable else 0.0
-        setup_subtotal = round(setup_price - setup_vat, 2)
-        setup_item = InvoiceItem(
-            invoice_id=invoice.id,
-            description=f"Setup fee - {plan.name}",
-            quantity=1,
-            unit_price=setup_subtotal,
-            total=setup_subtotal,
-            is_taxable=plan.is_taxable,
-            tax_rate=16.00 if plan.is_taxable else 0.0,
-            tax_amount=setup_vat,
+        from sqlalchemy import func
+        prior = await db.execute(
+            select(func.count()).where(Invoice.subscription_id == subscription.id)
         )
-        db.add(setup_item)
-        invoice.subtotal = float(invoice.subtotal) + setup_subtotal
-        invoice.total = float(invoice.total) + setup_price
-        invoice.balance_due = float(invoice.balance_due) + setup_price
+        if prior.scalar() == 0:
+            setup_price = float(plan.setup_fee)
+            setup_vat = round(setup_price * 16 / 116, 2) if plan.is_taxable else 0.0
+            setup_subtotal = round(setup_price - setup_vat, 2)
+            setup_item = InvoiceItem(
+                invoice_id=invoice.id,
+                description=f"Setup fee - {plan.name}",
+                quantity=1,
+                unit_price=setup_subtotal,
+                total=setup_subtotal,
+                is_taxable=plan.is_taxable,
+                tax_rate=16.00 if plan.is_taxable else 0.0,
+                tax_amount=setup_vat,
+            )
+            db.add(setup_item)
+            invoice.subtotal = float(invoice.subtotal) + setup_subtotal
+            invoice.total = float(invoice.total) + setup_price
+            invoice.balance_due = float(invoice.balance_due) + setup_price
 
     return invoice
 
@@ -250,6 +255,7 @@ async def preview_billing(
             "price": subtotal,
             "vat": vat,
             "total": price,
+            "setup_fee": float(plan.setup_fee) if plan.setup_fee > 0 else 0,
             "next_billing": sub.next_billing_date.isoformat(),
         })
 

@@ -189,7 +189,10 @@ async def change_subscription_speed(
         return {"success": False, "error": "Subscription not found"}
 
     new_plan_result = await db.execute(
-        select(Plan).where(Plan.id == plan_id)
+        select(Plan).where(
+            Plan.id == plan_id,
+            Plan.organization_id == organization_id,
+        )
     )
     new_plan = new_plan_result.scalar_one_or_none()
     if not new_plan:

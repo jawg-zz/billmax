@@ -31,6 +31,7 @@ def render_invoice_pdf(
     balance_due: float,
     notes: str | None = None,
     kra_etims_code: str | None = None,
+    org_logo_url: str | None = None,
 ) -> bytes:
     template = env.get_template("invoices/invoice.html")
     html = template.render(
@@ -43,6 +44,7 @@ def render_invoice_pdf(
         org_kra_pin=org_kra_pin,
         org_phone=org_phone,
         org_email=org_email,
+        org_logo_url=org_logo_url,
         customer_name=customer_name,
         customer_phone=customer_phone,
         customer_email=customer_email,

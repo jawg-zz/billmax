@@ -155,7 +155,8 @@ async def download_invoice_pdf(
         balance_due=float(invoice.balance_due),
         notes=invoice.notes,
         kra_etims_code=invoice.kra_etims_code,
-    )
+        org_logo_url=org.logo_url,
+        )
 
     return Response(
         content=pdf_bytes,

@@ -222,6 +222,7 @@ class InvoiceService:
             balance_due=float(invoice.balance_due),
             notes=invoice.notes,
             kra_etims_code=invoice.kra_etims_code,
+            org_logo_url=org.logo_url,
         )
 
         html_body = render_email_template(

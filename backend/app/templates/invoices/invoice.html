@@ -36,6 +36,9 @@
 </head>
 <body>
 <div class="header">
+  {% if org_logo_url %}
+  <img src="{{ org_logo_url }}" alt="{{ org_name }}" style="max-height:60px; margin-bottom:8px;" />
+  {% endif %}
   <h1>{{ org_name }}</h1>
   <p>{{ org_address or '' }}</p>
   <p>KRA PIN: {{ org_kra_pin or '—' }}</p>

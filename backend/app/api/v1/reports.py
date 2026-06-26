@@ -169,7 +169,7 @@ async def collections_report(
         "total_billed": float(total_billed or 0),
         "total_collected": float(total_collected or 0),
         "total_outstanding": float(total_outstanding or 0),
-        "collection_rate": round((total_collected or 0) / float(total_billed or 1) * 100, 1) if total_billed else 0,
+        "collection_rate": round(float(total_collected or 0) / float(total_billed or 1) * 100, 1) if total_billed else 0,
         "overdue_invoices": overdue or 0,
         "paid_invoices": paid or 0,
         "total_invoices": total_inv,

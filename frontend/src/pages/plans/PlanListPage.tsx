@@ -51,7 +51,7 @@ export function PlanListPage() {
       invalidate(); setCreateOpen(false); setForm(emptyForm()); setErrors({})
       toast("success", "Plan created")
     },
-    onError: () => toast("error", "Failed to create plan"),
+    onError: (err: any) => toast("error", err?.response?.data?.detail || "Failed to create plan"),
   })
 
   const updateMut = useMutation({
@@ -60,7 +60,7 @@ export function PlanListPage() {
       invalidate(); setEditTarget(null); setForm(emptyForm()); setErrors({})
       toast("success", "Plan updated")
     },
-    onError: () => toast("error", "Failed to update plan"),
+    onError: (err: any) => toast("error", err?.response?.data?.detail || "Failed to update plan"),
   })
 
   const deleteMut = useMutation({
@@ -69,7 +69,7 @@ export function PlanListPage() {
       invalidate()
       toast("success", "Plan deleted")
     },
-    onError: () => toast("error", "Failed to delete plan"),
+    onError: (err: any) => toast("error", err?.response?.data?.detail || "Failed to delete plan"),
   })
 
   const openEdit = (plan: Plan) => {

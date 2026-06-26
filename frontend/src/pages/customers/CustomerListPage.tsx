@@ -25,7 +25,7 @@ export function CustomerListPage() {
       queryClient.invalidateQueries({ queryKey: ["customers"] })
       toast("success", "Customer deleted")
     },
-    onError: () => toast("error", "Failed to delete customer"),
+    onError: (err: any) => toast("error", err?.response?.data?.detail || "Failed to delete customer"),
   })
 
   const approveMut = useMutation({
@@ -49,7 +49,7 @@ export function CustomerListPage() {
       queryClient.invalidateQueries({ queryKey: ["customers"] })
       toast("success", "Customer rejected")
     },
-    onError: () => toast("error", "Failed to reject customer"),
+    onError: (err: any) => toast("error", err?.response?.data?.detail || "Failed to reject customer"),
   })
 
   const { data, isLoading } = useQuery({ queryKey: ["customers"], queryFn: () => listCustomers() })

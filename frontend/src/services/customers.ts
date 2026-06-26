@@ -13,7 +13,13 @@ export interface Customer {
   physical_address: string | null
   service_address: string | null
   notes: string | null
+  alternative_phone: string | null
+  location_lat: number | null
+  location_lng: number | null
+  organization_id: string
   created_at: string
+  updated_at: string
+  provisioning?: { success: boolean; error?: string }
 }
 
 export interface CustomerCreate {

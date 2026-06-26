@@ -38,7 +38,7 @@ export function InvoiceDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["invoice", id] })
       toast("success", "Invoice sent", "The invoice has been emailed successfully.")
     },
-    onError: () => toast("error", "Failed to send invoice"),
+    onError: (err: any) => toast("error", err?.response?.data?.detail || "Failed to send invoice"),
   })
 
   const mpesaMut = useMutation({

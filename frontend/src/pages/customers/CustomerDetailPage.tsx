@@ -52,7 +52,7 @@ export function CustomerDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["customer", id] })
       toast("success", "Status updated", `Customer status changed to ${status}`)
     },
-    onError: () => toast("error", "Failed to update status"),
+    onError: (err: any) => toast("error", err?.response?.data?.detail || "Failed to update status"),
   })
 
   const { data: customer, isLoading } = useQuery({

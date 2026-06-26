@@ -35,12 +35,12 @@ function InvoiceActions({ invoice }: { invoice: Invoice }) {
   const sendMut = useMutation({
     mutationFn: () => sendInvoice(invoice.id),
     onSuccess: () => { invalidate(); toast("success", "Invoice sent") },
-    onError: () => toast("error", "Failed to send invoice"),
+    onError: (err: any) => toast("error", err?.response?.data?.detail || "Failed to send invoice"),
   })
   const payMut = useMutation({
     mutationFn: () => recordPayment(invoice.id, { amount, payment_method: payMethod }),
     onSuccess: () => { invalidate(); setPayOpen(false); toast("success", "Payment recorded") },
-    onError: () => toast("error", "Failed to record payment"),
+    onError: (err: any) => toast("error", err?.response?.data?.detail || "Failed to record payment"),
   })
   const mpesaMut = useMutation({
     mutationFn: () => initiateStkPush({ customer_id: invoice.customer_id, amount: invoice.balance_due, phone: mpesaPhone, invoice_id: invoice.id }),

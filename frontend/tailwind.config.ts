@@ -95,6 +95,7 @@ const config: Config = {
     },
   },
   plugins: [
+    require("tailwindcss-animate"),
     plugin(({ addUtilities }) => {
       addUtilities({
         ".scrollbar-thin": {

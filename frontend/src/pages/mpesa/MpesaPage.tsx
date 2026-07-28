@@ -29,7 +29,7 @@ import { Select } from "@/components/ui/select"
 import { Phone, Send, RefreshCw, DollarSign, TrendingUp, Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/Toaster"
 
-type StkStage = "form" | "sending" | "waiting" | "success" | "failed"
+type StkStage = "form" | "sending" | "waiting" | "success" | "failed" | "cancelled"
 
 export function MpesaPage() {
   const { toast } = useToast()
@@ -300,19 +300,21 @@ function StkPushDialog({
 
       try {
         const result = await queryTransaction(checkoutRequestId)
-        const resultCode = result?.ResultCode
-        if (resultCode === "0" || resultCode === 0) {
+        const status = result?.status
+
+        if (status === "completed") {
           if (pollTimerRef.current) clearInterval(pollTimerRef.current)
-          // Extract receipt from callback metadata
-          const items = result?.ResultData?.ResultParameter || []
-          const receipt = items.find((i: any) => i.Key === "MpesaReceiptNumber")?.Value
-          setReceiptNumber(receipt || null)
+          setReceiptNumber(result.receipt_number || null)
           setStage("success")
           onSuccess()
-        } else if (resultCode && resultCode !== "0" && resultCode !== 0) {
+        } else if (status === "cancelled") {
+          if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+          setStage("cancelled")
+        } else if (status === "failed") {
           if (pollTimerRef.current) clearInterval(pollTimerRef.current)
           setStage("failed")
         }
+        // status === "pending" or "not_found" → keep polling
       } catch {
         // Network error, keep polling
       }
@@ -518,7 +520,20 @@ function StkPushDialog({
             <div className="text-center">
               <p className="text-lg font-medium text-destructive">Payment Failed</p>
               <p className="text-sm text-muted-foreground mt-1">
-                The customer declined or the request timed out
+                The transaction could not be completed. The customer may have insufficient funds or the request timed out on Safaricom's side.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Cancelled Stage ── */}
+        {stage === "cancelled" && (
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <XCircle className="h-12 w-12 text-yellow-500" />
+            <div className="text-center">
+              <p className="text-lg font-medium text-yellow-600">Payment Cancelled</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                The customer declined or cancelled the STK Push prompt on their phone.
               </p>
             </div>
           </div>
@@ -541,7 +556,7 @@ function StkPushDialog({
               Close (will keep checking)
             </Button>
           )}
-          {(stage === "success" || stage === "failed") && (
+          {(stage === "success" || stage === "failed" || stage === "cancelled") && (
             <Button onClick={handleClose}>Done</Button>
           )}
         </DialogFooter>

@@ -269,17 +269,52 @@ async def query_transaction_status(
         )
     )
     mpesa_tx = result.scalar_one_or_none()
-    if mpesa_tx:
-        mpesa_tx.result_code = daraja_resp.get("ResultCode")
-        mpesa_tx.result_description = daraja_resp.get("ResultDesc")
-        mpesa_tx.raw_callback = daraja_resp
-        if daraja_resp.get("ResultCode") == "0":
-            mpesa_tx.status = "completed"
-        elif daraja_resp.get("ResultCode"):
-            mpesa_tx.status = "failed"
-        await db.commit()
+    if not mpesa_tx:
+        return {
+            "status": "not_found",
+            "result_code": None,
+            "result_desc": "Transaction not found",
+        }
 
-    return daraja_resp
+    result_code = daraja_resp.get("ResultCode")
+    result_desc = daraja_resp.get("ResultDesc", "")
+
+    mpesa_tx.result_code = result_code
+    mpesa_tx.result_description = result_desc
+    mpesa_tx.raw_callback = daraja_resp
+
+    # Map Daraja ResultCode to our status
+    # ResultCode 0 = success
+    # ResultCode 1032 = cancelled by user
+    # ResultCode 1 = insufficient balance
+    # ResultCode 500 = internal error
+    # Other non-zero codes = various failures
+    if result_code == "0" or result_code == 0:
+        mpesa_tx.status = "completed"
+        # Extract receipt number from callback metadata if present
+        callback_items = daraja_resp.get("CallbackMetadata", {}).get("Item", [])
+        for item in callback_items:
+            if item.get("Name") == "MpesaReceiptNumber":
+                mpesa_tx.receipt_number = str(item.get("Value", ""))
+                mpesa_tx.transaction_id = mpesa_tx.receipt_number
+                break
+    elif result_code in ("1032", 1032, "1037", 1037):
+        # User cancelled
+        mpesa_tx.status = "cancelled"
+    elif result_code and result_code not in ("0", 0):
+        # Any other non-zero code is a failure
+        mpesa_tx.status = "failed"
+
+    await db.commit()
+    await db.refresh(mpesa_tx)
+
+    return {
+        "status": mpesa_tx.status,
+        "result_code": result_code,
+        "result_desc": result_desc,
+        "receipt_number": mpesa_tx.receipt_number,
+        "transaction_id": mpesa_tx.transaction_id,
+    }
 
 
 async def list_transactions(
@@ -334,10 +369,24 @@ async def reconcile_pending(
             daraja_resp = await client.query_status(tx.checkout_request_id)
             result_code = daraja_resp.get("ResultCode")
             tx.raw_callback = daraja_resp
-            if result_code == "0":
+            
+            # Map Daraja ResultCode to our status
+            if result_code == "0" or result_code == 0:
                 tx.status = "completed"
+                # Extract receipt number from callback metadata if present
+                callback_items = daraja_resp.get("CallbackMetadata", {}).get("Item", [])
+                for item in callback_items:
+                    if item.get("Name") == "MpesaReceiptNumber":
+                        tx.receipt_number = str(item.get("Value", ""))
+                        tx.transaction_id = tx.receipt_number
+                        break
                 results.append({"id": str(tx.id), "status": "completed"})
-            elif result_code and result_code != "0":
+            elif result_code in ("1032", 1032, "1037", 1037):
+                # User cancelled
+                tx.status = "cancelled"
+                results.append({"id": str(tx.id), "status": "cancelled"})
+            elif result_code and result_code not in ("0", 0):
+                # Any other non-zero code is a failure
                 tx.status = "failed"
                 results.append({"id": str(tx.id), "status": "failed"})
     await db.commit()

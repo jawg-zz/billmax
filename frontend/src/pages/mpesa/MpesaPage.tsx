@@ -1,12 +1,15 @@
-import { useState } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   listMpesaTransactions,
   initiateStkPush,
   reconcileTransactions,
   getMpesaSummary,
+  queryTransaction,
   type MpesaTransaction,
 } from "@/services/mpesa"
+import { listCustomers, type Customer } from "@/services/customers"
+import { listInvoices, type Invoice } from "@/services/invoices"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTransition } from "@/components/shared/PageTransition"
 import { DataTable, type Column } from "@/components/shared/DataTable"
@@ -23,8 +26,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Select } from "@/components/ui/select"
-import { Phone, Send, RefreshCw, DollarSign, TrendingUp, Clock } from "lucide-react"
+import { Phone, Send, RefreshCw, DollarSign, TrendingUp, Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/Toaster"
+
+type StkStage = "form" | "sending" | "waiting" | "success" | "failed"
 
 export function MpesaPage() {
   const { toast } = useToast()
@@ -32,12 +37,6 @@ export function MpesaPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const [showStkDialog, setShowStkDialog] = useState(false)
-  const [stkForm, setStkForm] = useState({
-    customer_id: "",
-    phone: "",
-    amount: "",
-    invoice_id: "",
-  })
 
   const { data: transactions, isLoading } = useQuery({
     queryKey: ["mpesa", search, statusFilter],
@@ -51,20 +50,7 @@ export function MpesaPage() {
   const { data: summary } = useQuery({
     queryKey: ["mpesa-summary"],
     queryFn: getMpesaSummary,
-    refetchInterval: 60000, // Refresh every minute
-  })
-
-  const stkMutation = useMutation({
-    mutationFn: initiateStkPush,
-    onSuccess: () => {
-      toast("success", "STK Push sent successfully")
-      setShowStkDialog(false)
-      setStkForm({ customer_id: "", phone: "", amount: "", invoice_id: "" })
-      queryClient.invalidateQueries({ queryKey: ["mpesa"] })
-    },
-    onError: (error: any) => {
-      toast("error", error?.response?.data?.detail || "Failed to send STK Push")
-    },
+    refetchInterval: 60000,
   })
 
   const reconcileMutation = useMutation({
@@ -78,19 +64,6 @@ export function MpesaPage() {
       toast("error", error?.response?.data?.detail || "Failed to reconcile transactions")
     },
   })
-
-  const handleStkSubmit = () => {
-    if (!stkForm.customer_id || !stkForm.phone || !stkForm.amount) {
-      toast("error", "Please fill in all required fields")
-      return
-    }
-    stkMutation.mutate({
-      customer_id: stkForm.customer_id,
-      phone: stkForm.phone,
-      amount: parseFloat(stkForm.amount),
-      invoice_id: stkForm.invoice_id || undefined,
-    })
-  }
 
   const columns: Column<MpesaTransaction>[] = [
     { key: "type", header: "Type", sortable: true },
@@ -206,68 +179,373 @@ export function MpesaPage() {
       )}
 
       {/* STK Push Dialog */}
-      <Dialog open={showStkDialog} onOpenChange={setShowStkDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Send STK Push</DialogTitle>
-          </DialogHeader>
+      <StkPushDialog
+        open={showStkDialog}
+        onOpenChange={setShowStkDialog}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["mpesa"] })
+          queryClient.invalidateQueries({ queryKey: ["mpesa-summary"] })
+        }}
+      />
+    </PageTransition>
+  )
+}
+
+// ─── STK Push Dialog ──────────────────────────────────────────────────────────
+
+function StkPushDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  onSuccess: () => void
+}) {
+  const { toast } = useToast()
+
+  // Form state
+  const [customerSearch, setCustomerSearch] = useState("")
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
+  const [amount, setAmount] = useState("")
+  const [phone, setPhone] = useState("")
+
+  // Polling state
+  const [stage, setStage] = useState<StkStage>("form")
+  const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null)
+  const [pollCount, setPollCount] = useState(0)
+  const [receiptNumber, setReceiptNumber] = useState<string | null>(null)
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Fetch customers
+  const { data: customers = [] } = useQuery({
+    queryKey: ["customers-all"],
+    queryFn: () => listCustomers({ limit: 500 }),
+    enabled: open,
+  })
+
+  // Filter customers by search
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearch) return customers.slice(0, 50)
+    const q = customerSearch.toLowerCase()
+    return customers
+      .filter(
+        (c) =>
+          c.first_name.toLowerCase().includes(q) ||
+          c.last_name.toLowerCase().includes(q) ||
+          c.phone.includes(q) ||
+          c.email?.toLowerCase().includes(q)
+      )
+      .slice(0, 50)
+  }, [customers, customerSearch])
+
+  // Fetch invoices for selected customer
+  const { data: customerInvoices = [] } = useQuery({
+    queryKey: ["invoices-customer", selectedCustomer?.id],
+    queryFn: () => listInvoices({ customer_id: selectedCustomer!.id, limit: 100 }),
+    enabled: !!selectedCustomer,
+  })
+
+  // Only show unpaid/overdue invoices
+  const unpaidInvoices = useMemo(
+    () => customerInvoices.filter((inv) => ["sent", "overdue", "partially_paid"].includes(inv.status)),
+    [customerInvoices]
+  )
+
+  // When customer is selected, auto-fill phone
+  useEffect(() => {
+    if (selectedCustomer) {
+      setPhone(selectedCustomer.mpesa_phone || selectedCustomer.phone || "")
+    }
+  }, [selectedCustomer])
+
+  // When invoice is selected, auto-fill amount
+  useEffect(() => {
+    if (selectedInvoice) {
+      setAmount(selectedInvoice.balance_due.toString())
+    }
+  }, [selectedInvoice])
+
+  // STK Push mutation
+  const stkMutation = useMutation({
+    mutationFn: initiateStkPush,
+    onSuccess: (data) => {
+      setCheckoutRequestId(data.checkout_request_id)
+      setStage("waiting")
+      setPollCount(0)
+    },
+    onError: (error: any) => {
+      toast("error", error?.response?.data?.detail || "Failed to send STK Push")
+      setStage("form")
+    },
+  })
+
+  // Polling for transaction status
+  useEffect(() => {
+    if (stage !== "waiting" || !checkoutRequestId) return
+
+    // Poll every 5 seconds, max 60 seconds (12 polls)
+    pollTimerRef.current = setInterval(async () => {
+      setPollCount((prev) => {
+        const next = prev + 1
+        if (next > 12) {
+          if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+          setStage("form")
+          toast("info", "STK Push is still pending. Use Reconcile to check later.")
+          return 0
+        }
+        return next
+      })
+
+      try {
+        const result = await queryTransaction(checkoutRequestId)
+        const resultCode = result?.ResultCode
+        if (resultCode === "0" || resultCode === 0) {
+          if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+          // Extract receipt from callback metadata
+          const items = result?.ResultData?.ResultParameter || []
+          const receipt = items.find((i: any) => i.Key === "MpesaReceiptNumber")?.Value
+          setReceiptNumber(receipt || null)
+          setStage("success")
+          onSuccess()
+        } else if (resultCode && resultCode !== "0" && resultCode !== 0) {
+          if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+          setStage("failed")
+        }
+      } catch {
+        // Network error, keep polling
+      }
+    }, 5000)
+
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    }
+  }, [stage, checkoutRequestId, onSuccess, toast])
+
+  const handleSend = () => {
+    if (!selectedCustomer) {
+      toast("error", "Please select a customer")
+      return
+    }
+    if (!phone) {
+      toast("error", "Please enter a phone number")
+      return
+    }
+    if (!amount || parseFloat(amount) <= 0) {
+      toast("error", "Please enter a valid amount")
+      return
+    }
+    setStage("sending")
+    stkMutation.mutate({
+      customer_id: selectedCustomer.id,
+      phone,
+      amount: parseFloat(amount),
+      invoice_id: selectedInvoice?.id || undefined,
+    })
+  }
+
+  const handleClose = () => {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    // Reset form
+    setCustomerSearch("")
+    setSelectedCustomer(null)
+    setSelectedInvoice(null)
+    setAmount("")
+    setPhone("")
+    setStage("form")
+    setCheckoutRequestId(null)
+    setPollCount(0)
+    setReceiptNumber(null)
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Send STK Push</DialogTitle>
+        </DialogHeader>
+
+        {/* ── Form Stage ── */}
+        {(stage === "form" || stage === "sending") && (
           <div className="space-y-4 py-4">
+            {/* Customer Picker */}
             <div className="space-y-2">
-              <label htmlFor="customer_id" className="text-sm font-medium">
-                Customer ID
-              </label>
-              <Input
-                id="customer_id"
-                value={stkForm.customer_id}
-                onChange={(e) => setStkForm({ ...stkForm, customer_id: e.target.value })}
-                placeholder="Enter customer UUID"
-              />
+              <label className="text-sm font-medium">Customer</label>
+              {selectedCustomer ? (
+                <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {selectedCustomer.first_name} {selectedCustomer.last_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{selectedCustomer.phone}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedCustomer(null)}>
+                    Change
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Search by name, phone, or email..."
+                    value={customerSearch}
+                    onChange={(e) => setCustomerSearch(e.target.value)}
+                  />
+                  <div className="max-h-40 overflow-y-auto rounded-lg border border-border">
+                    {filteredCustomers.length === 0 ? (
+                      <p className="p-3 text-sm text-muted-foreground">No customers found</p>
+                    ) : (
+                      filteredCustomers.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className="w-full px-3 py-2 text-left hover:bg-muted/50 border-b border-border last:border-0 transition-colors"
+                          onClick={() => {
+                            setSelectedCustomer(c)
+                            setCustomerSearch("")
+                          }}
+                        >
+                          <p className="text-sm font-medium">
+                            {c.first_name} {c.last_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {c.phone}
+                            {c.email ? ` · ${c.email}` : ""}
+                          </p>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Phone */}
             <div className="space-y-2">
-              <label htmlFor="phone" className="text-sm font-medium">
+              <label htmlFor="stk-phone" className="text-sm font-medium">
                 Phone Number
               </label>
               <Input
-                id="phone"
-                value={stkForm.phone}
-                onChange={(e) => setStkForm({ ...stkForm, phone: e.target.value })}
+                id="stk-phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 placeholder="0712345678"
               />
+              <p className="text-xs text-muted-foreground">Will be normalized to 254... format</p>
             </div>
+
+            {/* Invoice Selector */}
+            {selectedCustomer && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Invoice (optional)</label>
+                {unpaidInvoices.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No unpaid invoices for this customer</p>
+                ) : (
+                  <Select
+                    value={selectedInvoice?.id || ""}
+                    onChange={(e) => {
+                      const inv = unpaidInvoices.find((i) => i.id === e.target.value)
+                      setSelectedInvoice(inv || null)
+                    }}
+                    options={[
+                      { value: "", label: "No invoice — general payment" },
+                      ...unpaidInvoices.map((inv) => ({
+                        value: inv.id,
+                        label: `${inv.invoice_number} — KES ${inv.balance_due.toLocaleString()} (${inv.status})`,
+                      })),
+                    ]}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Amount */}
             <div className="space-y-2">
-              <label htmlFor="amount" className="text-sm font-medium">
+              <label htmlFor="stk-amount" className="text-sm font-medium">
                 Amount (KES)
               </label>
               <Input
-                id="amount"
+                id="stk-amount"
                 type="number"
-                value={stkForm.amount}
-                onChange={(e) => setStkForm({ ...stkForm, amount: e.target.value })}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
                 placeholder="1000"
               />
             </div>
-            <div className="space-y-2">
-              <label htmlFor="invoice_id" className="text-sm font-medium">
-                Invoice ID (Optional)
-              </label>
-              <Input
-                id="invoice_id"
-                value={stkForm.invoice_id}
-                onChange={(e) => setStkForm({ ...stkForm, invoice_id: e.target.value })}
-                placeholder="Invoice UUID"
-              />
+          </div>
+        )}
+
+        {/* ── Waiting Stage (polling) ── */}
+        {stage === "waiting" && (
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <div className="text-center">
+              <p className="text-lg font-medium">Waiting for customer to confirm...</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                An M-Pesa prompt has been sent to <strong>{phone}</strong>
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Checking every 5s · {pollCount}/12 attempts
+              </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowStkDialog(false)}>
-              Cancel
+        )}
+
+        {/* ── Success Stage ── */}
+        {stage === "success" && (
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <CheckCircle2 className="h-12 w-12 text-green-500" />
+            <div className="text-center">
+              <p className="text-lg font-medium text-green-600">Payment Confirmed!</p>
+              <p className="text-sm text-muted-foreground mt-1">KES {parseFloat(amount).toLocaleString()} received</p>
+              {receiptNumber && (
+                <p className="text-sm text-muted-foreground mt-1">Receipt: {receiptNumber}</p>
+              )}
+              {selectedInvoice && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Applied to {selectedInvoice.invoice_number}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Failed Stage ── */}
+        {stage === "failed" && (
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <XCircle className="h-12 w-12 text-destructive" />
+            <div className="text-center">
+              <p className="text-lg font-medium text-destructive">Payment Failed</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                The customer declined or the request timed out
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Footer ── */}
+        <DialogFooter>
+          {(stage === "form" || stage === "sending") && (
+            <>
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleSend} disabled={stkMutation.isPending || stage === "sending"}>
+                {stage === "sending" ? "Sending..." : "Send STK Push"}
+              </Button>
+            </>
+          )}
+          {stage === "waiting" && (
+            <Button variant="outline" onClick={handleClose}>
+              Close (will keep checking)
             </Button>
-            <Button onClick={handleStkSubmit} disabled={stkMutation.isPending}>
-              {stkMutation.isPending ? "Sending..." : "Send STK Push"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </PageTransition>
+          )}
+          {(stage === "success" || stage === "failed") && (
+            <Button onClick={handleClose}>Done</Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

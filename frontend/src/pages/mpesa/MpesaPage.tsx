@@ -285,6 +285,10 @@ function StkPushDialog({
   useEffect(() => {
     if (stage !== "waiting" || !checkoutRequestId) return
 
+    // Use a ref to avoid stale closure issues
+    const currentCheckoutId = checkoutRequestId
+    const currentOnSuccess = onSuccess
+
     // Poll every 5 seconds, max 60 seconds (12 polls)
     pollTimerRef.current = setInterval(async () => {
       setPollCount((prev) => {
@@ -299,14 +303,14 @@ function StkPushDialog({
       })
 
       try {
-        const result = await queryTransaction(checkoutRequestId)
+        const result = await queryTransaction(currentCheckoutId)
         const status = result?.status
 
         if (status === "completed") {
           if (pollTimerRef.current) clearInterval(pollTimerRef.current)
           setReceiptNumber(result.receipt_number || null)
           setStage("success")
-          onSuccess()
+          currentOnSuccess()
         } else if (status === "cancelled") {
           if (pollTimerRef.current) clearInterval(pollTimerRef.current)
           setStage("cancelled")
@@ -323,7 +327,8 @@ function StkPushDialog({
     return () => {
       if (pollTimerRef.current) clearInterval(pollTimerRef.current)
     }
-  }, [stage, checkoutRequestId, onSuccess, toast])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, checkoutRequestId])
 
   const handleSend = () => {
     if (!selectedCustomer) {

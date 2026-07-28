@@ -285,9 +285,9 @@ async def query_transaction_status(
 
     # Map Daraja ResultCode to our status
     # ResultCode 0 = success
-    # ResultCode 1032 = cancelled by user
+    # ResultCode 1032 = cancelled by user (explicitly declined)
+    # ResultCode 1037 = DS timeout / user hasn't responded yet (keep pending)
     # ResultCode 1 = insufficient balance
-    # ResultCode 500 = internal error
     # Other non-zero codes = various failures
     if result_code == "0" or result_code == 0:
         mpesa_tx.status = "completed"
@@ -298,9 +298,12 @@ async def query_transaction_status(
                 mpesa_tx.receipt_number = str(item.get("Value", ""))
                 mpesa_tx.transaction_id = mpesa_tx.receipt_number
                 break
-    elif result_code in ("1032", 1032, "1037", 1037):
-        # User cancelled
+    elif result_code in ("1032", 1032):
+        # User explicitly cancelled/declined the STK prompt
         mpesa_tx.status = "cancelled"
+    elif result_code in ("1037", 1037):
+        # User hasn't responded yet — keep as pending so polling continues
+        pass
     elif result_code and result_code not in ("0", 0):
         # Any other non-zero code is a failure
         mpesa_tx.status = "failed"
@@ -381,10 +384,13 @@ async def reconcile_pending(
                         tx.transaction_id = tx.receipt_number
                         break
                 results.append({"id": str(tx.id), "status": "completed"})
-            elif result_code in ("1032", 1032, "1037", 1037):
-                # User cancelled
+            elif result_code in ("1032", 1032):
+                # User explicitly cancelled/declined the STK prompt
                 tx.status = "cancelled"
                 results.append({"id": str(tx.id), "status": "cancelled"})
+            elif result_code in ("1037", 1037):
+                # User hasn't responded yet — still pending
+                results.append({"id": str(tx.id), "status": "pending"})
             elif result_code and result_code not in ("0", 0):
                 # Any other non-zero code is a failure
                 tx.status = "failed"

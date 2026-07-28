@@ -261,8 +261,7 @@ async def query_transaction_status(
     checkout_request_id: str,
     client: "DarajaClient",
 ) -> dict:
-    daraja_resp = await client.query_status(checkout_request_id)
-
+    # First, get current DB state before calling Daraja
     result = await db.execute(
         select(MpesaTransaction).where(
             MpesaTransaction.checkout_request_id == checkout_request_id
@@ -274,6 +273,29 @@ async def query_transaction_status(
             "status": "not_found",
             "result_code": None,
             "result_desc": "Transaction not found",
+        }
+
+    # If already terminal, don't query again
+    if mpesa_tx.status in ("completed", "cancelled", "failed"):
+        return {
+            "status": mpesa_tx.status,
+            "result_code": mpesa_tx.result_code,
+            "result_desc": mpesa_tx.result_description,
+            "receipt_number": mpesa_tx.receipt_number,
+            "transaction_id": mpesa_tx.transaction_id,
+        }
+
+    # Query Daraja — wrap in try/except so sandbox errors don't crash polling
+    try:
+        daraja_resp = await client.query_status(checkout_request_id)
+    except Exception as e:
+        # If Daraja query fails (sandbox, network, auth), keep current status
+        return {
+            "status": mpesa_tx.status,
+            "result_code": None,
+            "result_desc": f"Query failed: {str(e)[:200]}",
+            "receipt_number": mpesa_tx.receipt_number,
+            "transaction_id": mpesa_tx.transaction_id,
         }
 
     result_code = daraja_resp.get("ResultCode")

@@ -100,7 +100,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">Admin User</p>
-            <p className="text-[10px] text-blue-200/50 truncate">admin@billmax.io</p>
+            <p className="text-[10px] text-blue-200/50 truncate">admin@billmax.ke</p>
           </div>
         </div>
       </div>

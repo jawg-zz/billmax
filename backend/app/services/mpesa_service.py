@@ -286,6 +286,10 @@ async def list_transactions(
     db: AsyncSession,
     organization_id: uuid.UUID,
     status: str | None = None,
+    customer_id: uuid.UUID | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    search: str | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> list[MpesaTransaction]:
@@ -294,6 +298,20 @@ async def list_transactions(
     )
     if status:
         query = query.where(MpesaTransaction.status == status)
+    if customer_id:
+        query = query.where(MpesaTransaction.customer_id == customer_id)
+    if date_from:
+        query = query.where(MpesaTransaction.created_at >= date_from)
+    if date_to:
+        query = query.where(MpesaTransaction.created_at <= date_to)
+    if search:
+        # Search in phone, receipt, account_reference
+        search_pattern = f"%{search}%"
+        query = query.where(
+            (MpesaTransaction.phone_number.ilike(search_pattern))
+            | (MpesaTransaction.receipt_number.ilike(search_pattern))
+            | (MpesaTransaction.account_reference.ilike(search_pattern))
+        )
     query = query.order_by(MpesaTransaction.created_at.desc()).offset(skip).limit(limit)
     result = await db.execute(query)
     return list(result.scalars().all())

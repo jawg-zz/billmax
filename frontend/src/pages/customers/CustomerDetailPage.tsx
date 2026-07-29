@@ -79,11 +79,12 @@ export function CustomerDetailPage() {
     enabled: !!id,
   })
 
-  const { data: mpesaTx } = useQuery({
+  const { data: mpesaResp } = useQuery({
     queryKey: ["mpesa", "customer", id],
     queryFn: () => listMpesaTransactions(),
     enabled: !!id,
   })
+  const mpesaTx = mpesaResp?.transactions ?? []
 
   if (isLoading) return (
     <PageTransition>
@@ -101,7 +102,7 @@ export function CustomerDetailPage() {
 
   const customerSubs = subscriptions?.filter((s) => s.customer_id === id) ?? []
   const customerTickets = tickets ?? []
-  const customerMpesa = (mpesaTx ?? []).filter((t) => t.phone.includes(customer.phone.slice(-9)))
+  const customerMpesa = mpesaTx.filter((t) => t.phone.includes(customer.phone.slice(-9)))
 
   return (
     <PageTransition>

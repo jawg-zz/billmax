@@ -27,6 +27,11 @@ export interface MpesaSummary {
   pending: number
 }
 
+export interface MpesaTransactionListResponse {
+  total: number
+  transactions: MpesaTransaction[]
+}
+
 export async function initiateStkPush(data: {
   customer_id: string
   amount: number
@@ -52,7 +57,7 @@ export async function listMpesaTransactions(params?: {
   limit?: number
 }) {
   const res = await api.get("/mpesa/transactions", { params })
-  return res.data as MpesaTransaction[]
+  return res.data as MpesaTransactionListResponse
 }
 
 export async function reconcileTransactions() {

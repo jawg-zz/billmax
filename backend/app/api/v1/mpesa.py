@@ -88,7 +88,7 @@ async def mpesa_transactions(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(BillingStaff),
 ):
-    txs = await list_transactions(
+    txs, total = await list_transactions(
         db,
         user.organization_id,
         status=status,
@@ -99,23 +99,26 @@ async def mpesa_transactions(
         skip=skip,
         limit=limit,
     )
-    return [
-        {
-            "id": str(tx.id),
-            "type": tx.type,
-            "phone": tx.phone_number,
-            "amount": float(tx.amount),
-            "receipt": tx.receipt_number,
-            "status": tx.status,
-            "checkout_request_id": tx.checkout_request_id,
-            "customer_id": str(tx.customer_id) if tx.customer_id else None,
-            "invoice_id": str(tx.invoice_id) if tx.invoice_id else None,
-            "account_reference": tx.account_reference,
-            "created_at": tx.created_at.isoformat(),
-            "updated_at": tx.updated_at.isoformat(),
-        }
-        for tx in txs
-    ]
+    return {
+        "total": total,
+        "transactions": [
+            {
+                "id": str(tx.id),
+                "type": tx.type,
+                "phone": tx.phone_number,
+                "amount": float(tx.amount),
+                "receipt": tx.receipt_number,
+                "status": tx.status,
+                "checkout_request_id": tx.checkout_request_id,
+                "customer_id": str(tx.customer_id) if tx.customer_id else None,
+                "invoice_id": str(tx.invoice_id) if tx.invoice_id else None,
+                "account_reference": tx.account_reference,
+                "created_at": tx.created_at.isoformat(),
+                "updated_at": tx.updated_at.isoformat(),
+            }
+            for tx in txs
+        ],
+    }
 
 
 @router.post("/reconcile")

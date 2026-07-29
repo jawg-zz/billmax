@@ -1,9 +1,18 @@
+import asyncio
 import base64
 from datetime import datetime, timedelta, timezone
 
 import httpx
 
 from app.config import settings
+
+# M-Pesa STK Push limits from Safaricom docs
+MAX_RETRIES = 2  # 3 total attempts (initial + 2 retries)
+RETRY_DELAYS = [2.0, 4.0]  # seconds between retries
+
+
+class DarajaError(Exception):
+    """Raised when the Daraja API returns a non-success status."""
 
 
 class DarajaClient:
@@ -22,6 +31,7 @@ class DarajaClient:
         self.environment = environment
         self._token: str | None = None
         self._token_expiry: datetime | None = None
+        self._client: httpx.AsyncClient | None = None
 
     @classmethod
     def from_settings(cls) -> "DarajaClient":
@@ -47,41 +57,85 @@ class DarajaClient:
         raw = f"{self.shortcode}{self.passkey}{timestamp}"
         return base64.b64encode(raw.encode()).decode()
 
-    async def _get_token(self) -> str:
-        now = datetime.utcnow()
-        if self._token and self._token_expiry and now < self._token_expiry:
-            return self._token
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Return a reusable connection-pooled client."""
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(timeout=30)
+        return self._client
 
+    async def _close_client(self):
+        if self._client and not self._client.is_closed:
+            await self._client.aclose()
+            self._client = None
+
+    async def _get_token(self) -> str:
+        now = datetime.now(timezone.utc)
+        if self._token and self._token_expiry and now < self._token_expiry:
+            return self._token  # pyright: ignore[reportReturnType]
+
+        client = await self._get_client()
         url = f"{self.base_url}/oauth/v1/generate?grant_type=client_credentials"
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                url,
-                auth=(self.consumer_key, self.consumer_secret),
-                timeout=30,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            self._token = data["access_token"]
-            expires_in = int(data.get("expires_in", 3600))
-            self._token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in - 60)
-            return self._token
+
+        last_error: Exception | None = None
+        for attempt in range(MAX_RETRIES + 1):
+            try:
+                resp = await client.get(
+                    url,
+                    auth=(self.consumer_key, self.consumer_secret),
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                self._token = data["access_token"]
+                expires_in = int(data.get("expires_in", 3600))
+                self._token_expiry = datetime.now(timezone.utc) + timedelta(
+                    seconds=expires_in - 60
+                )
+                return self._token
+            except (httpx.RequestError, httpx.HTTPStatusError) as e:
+                last_error = e
+                if attempt < MAX_RETRIES:
+                    await asyncio.sleep(RETRY_DELAYS[attempt])
+                    continue
+        raise DarajaError(
+            f"Failed to get OAuth token after {MAX_RETRIES + 1} attempts: {last_error}"
+        ) from last_error
 
     async def _post(self, path: str, payload: dict) -> dict:
-        token = await self._get_token()
+        """POST to Daraja with retry logic for transient failures."""
+        client = await self._get_client()
         url = f"{self.base_url}{path}"
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                url,
-                json=payload,
-                headers={"Authorization": f"Bearer {token}"},
-                timeout=30,
-            )
-            data = resp.json()
-            if not resp.is_success:
-                raise RuntimeError(
-                    f"M-Pesa API {resp.status_code}: {data.get('errorMessage', data.get('errorCode', data))}"
+
+        last_error: Exception | None = None
+        for attempt in range(MAX_RETRIES + 1):
+            try:
+                token = await self._get_token()
+                resp = await client.post(
+                    url,
+                    json=payload,
+                    headers={"Authorization": f"Bearer {token}"},
                 )
-            return data
+                data = resp.json()
+                if not resp.is_success:
+                    raise DarajaError(
+                        f"M-Pesa API {resp.status_code}: "
+                        f"{data.get('errorMessage', data.get('errorCode', data))}"
+                    )
+                return data
+            except (httpx.RequestError, httpx.TimeoutException) as e:
+                # Transient network errors — retry
+                last_error = e
+                if attempt < MAX_RETRIES:
+                    await asyncio.sleep(RETRY_DELAYS[attempt])
+                    continue
+                raise DarajaError(
+                    f"M-Pesa API request failed after {MAX_RETRIES + 1} attempts: {e}"
+                ) from e
+            except DarajaError:
+                # Non-transient HTTP errors — don't retry
+                raise
+        raise DarajaError(
+            f"M-Pesa API request failed after {MAX_RETRIES + 1} attempts: {last_error}"
+        ) from last_error
 
     async def stk_push(
         self,

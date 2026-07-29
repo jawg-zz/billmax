@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   listMpesaTransactions,
@@ -26,10 +26,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Select } from "@/components/ui/select"
-import { Phone, Send, RefreshCw, DollarSign, TrendingUp, Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react"
+import { Phone, Send, RefreshCw, DollarSign, TrendingUp, Clock, CheckCircle2, XCircle, Loader2, Bell } from "lucide-react"
 import { useToast } from "@/components/ui/Toaster"
 
 type StkStage = "form" | "sending" | "waiting" | "success" | "failed" | "cancelled"
+
+const POLL_INITIAL_MS = 2000
+const POLL_MAX_MS = 30000
+const POLL_BACKOFF = 1.8
 
 export function MpesaPage() {
   const { toast } = useToast()
@@ -38,7 +42,7 @@ export function MpesaPage() {
   const [statusFilter, setStatusFilter] = useState("")
   const [showStkDialog, setShowStkDialog] = useState(false)
 
-  const { data: transactions, isLoading } = useQuery({
+  const { data: listResponse, isLoading } = useQuery({
     queryKey: ["mpesa", search, statusFilter],
     queryFn: () =>
       listMpesaTransactions({
@@ -46,6 +50,9 @@ export function MpesaPage() {
         status: statusFilter || undefined,
       }),
   })
+
+  const transactions = listResponse?.transactions ?? []
+  const totalCount = listResponse?.total ?? 0
 
   const { data: summary } = useQuery({
     queryKey: ["mpesa-summary"],
@@ -94,7 +101,7 @@ export function MpesaPage() {
     <PageTransition>
       <PageHeader
         title="M-Pesa Transactions"
-        description={`${transactions?.length ?? 0} Safaricom Daraja API transactions`}
+        description={`${totalCount} Safaricom Daraja API transactions`}
         actions={
           <div className="flex gap-2">
             <Button
@@ -163,19 +170,20 @@ export function MpesaPage() {
             { value: "pending", label: "Pending" },
             { value: "completed", label: "Completed" },
             { value: "failed", label: "Failed" },
+            { value: "cancelled", label: "Cancelled" },
           ]}
           className="max-w-[200px]"
         />
       </div>
 
-      {!isLoading && (transactions ?? []).length === 0 ? (
+      {!isLoading && transactions.length === 0 ? (
         <EmptyState
           icon={<Phone className="h-12 w-12" />}
           title="No M-Pesa transactions yet"
           description="Transactions will appear here when customers pay or when you send STK Push requests"
         />
       ) : (
-        <DataTable columns={columns} data={transactions ?? []} loading={isLoading} pageSize={25} minWidth="600px" />
+        <DataTable columns={columns} data={transactions} loading={isLoading} pageSize={25} minWidth="600px" />
       )}
 
       {/* STK Push Dialog */}
@@ -211,12 +219,17 @@ function StkPushDialog({
   const [amount, setAmount] = useState("")
   const [phone, setPhone] = useState("")
 
-  // Polling state
+  // Polling state — lives in the dialog but survives close
   const [stage, setStage] = useState<StkStage>("form")
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null)
   const [pollCount, setPollCount] = useState(0)
   const [receiptNumber, setReceiptNumber] = useState<string | null>(null)
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pollIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [backgroundPolling, setBackgroundPolling] = useState(false)
+
+  // Ref to latest stage/checkoutRequestId for the polling callback
+  const pollStateRef = useRef({ stage, checkoutRequestId, pollCount })
+  pollStateRef.current = { stage, checkoutRequestId, pollCount }
 
   // Fetch customers
   const { data: customers = [] } = useQuery({
@@ -253,14 +266,14 @@ function StkPushDialog({
     [customerInvoices]
   )
 
-  // When customer is selected, auto-fill phone
+  // Auto-fill phone from customer
   useEffect(() => {
     if (selectedCustomer) {
       setPhone(selectedCustomer.mpesa_phone || selectedCustomer.phone || "")
     }
   }, [selectedCustomer])
 
-  // When invoice is selected, auto-fill amount
+  // Auto-fill amount from invoice
   useEffect(() => {
     if (selectedInvoice) {
       setAmount(selectedInvoice.balance_due.toString())
@@ -274,6 +287,7 @@ function StkPushDialog({
       setCheckoutRequestId(data.checkout_request_id)
       setStage("waiting")
       setPollCount(0)
+      setBackgroundPolling(false)
     },
     onError: (error: any) => {
       toast("error", error?.response?.data?.detail || "Failed to send STK Push")
@@ -281,51 +295,63 @@ function StkPushDialog({
     },
   })
 
-  // Polling for transaction status
-  useEffect(() => {
-    if (stage !== "waiting" || !checkoutRequestId) return
+  // ── Polling with exponential backoff ──
+  const doPoll = useCallback(() => {
+    const current = pollStateRef.current
+    if (current.stage !== "waiting" || !current.checkoutRequestId) return
 
-    // Use a ref to avoid stale closure issues
-    const currentCheckoutId = checkoutRequestId
-    const currentOnSuccess = onSuccess
+    const nextCount = current.pollCount + 1
+    setPollCount(nextCount)
 
-    // Poll every 5 seconds, max 60 seconds (12 polls)
-    pollTimerRef.current = setInterval(async () => {
-      setPollCount((prev) => {
-        const next = prev + 1
-        if (next > 12) {
-          if (pollTimerRef.current) clearInterval(pollTimerRef.current)
-          setStage("form")
-          toast("info", "STK Push is still pending. Use Reconcile to check later.")
-          return 0
-        }
-        return next
-      })
-
-      try {
-        const result = await queryTransaction(currentCheckoutId)
+    queryTransaction(current.checkoutRequestId)
+      .then((result) => {
         const status = result?.status
-
         if (status === "completed") {
-          if (pollTimerRef.current) clearInterval(pollTimerRef.current)
-          setReceiptNumber(result.receipt_number || null)
           setStage("success")
-          currentOnSuccess()
-        } else if (status === "cancelled") {
-          if (pollTimerRef.current) clearInterval(pollTimerRef.current)
-          setStage("cancelled")
-        } else if (status === "failed") {
-          if (pollTimerRef.current) clearInterval(pollTimerRef.current)
-          setStage("failed")
+          setReceiptNumber(result.receipt_number || null)
+          onSuccess()
+          // If closed, notify via toast
+          if (pollStateRef.current.stage === "waiting" && !open) {
+            const receipt = result.receipt_number || ""
+            toast("success", `Payment confirmed! Receipt: ${receipt}`)
+          }
+          return
         }
-        // status === "pending" or "not_found" → keep polling
-      } catch {
-        // Network error, keep polling
-      }
-    }, 5000)
+        if (status === "cancelled") {
+          setStage("cancelled")
+          if (!open) toast("info", "STK Push was cancelled by the customer")
+          return
+        }
+        if (status === "failed") {
+          setStage("failed")
+          if (!open) toast("error", "STK Push payment failed")
+          return
+        }
+        // Still pending — schedule next poll with backoff
+        scheduleNext(nextCount)
+      })
+      .catch(() => {
+        // Network error — retry with backoff
+        scheduleNext(nextCount)
+      })
+  }, [onSuccess, open, toast])
 
+  const scheduleNext = useCallback(
+    (count: number) => {
+      const delay = Math.min(POLL_INITIAL_MS * Math.pow(POLL_BACKOFF, count - 1), POLL_MAX_MS)
+      pollIntervalRef.current = setTimeout(doPoll, delay)
+    },
+    [doPoll]
+  )
+
+  // Start polling when stage transitions to "waiting"
+  useEffect(() => {
+    if (stage === "waiting" && checkoutRequestId) {
+      // First poll happens immediately (the Daraja callback may have already arrived)
+      pollIntervalRef.current = setTimeout(doPoll, 500)
+    }
     return () => {
-      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+      if (pollIntervalRef.current) clearTimeout(pollIntervalRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, checkoutRequestId])
@@ -353,8 +379,21 @@ function StkPushDialog({
   }
 
   const handleClose = () => {
-    if (pollTimerRef.current) clearInterval(pollTimerRef.current)
-    // Reset form
+    // If we're actively waiting, move to background polling
+    if (stage === "waiting") {
+      setBackgroundPolling(true)
+      setStage("form") // Reset dialog UI for reuse
+      toast("info", "STK Push is still pending. You'll be notified when it completes.")
+      onOpenChange(false)
+      return
+    }
+    // Otherwise full reset
+    resetForm()
+    if (pollIntervalRef.current) clearTimeout(pollIntervalRef.current)
+    onOpenChange(false)
+  }
+
+  const resetForm = () => {
     setCustomerSearch("")
     setSelectedCustomer(null)
     setSelectedInvoice(null)
@@ -364,14 +403,26 @@ function StkPushDialog({
     setCheckoutRequestId(null)
     setPollCount(0)
     setReceiptNumber(null)
-    onOpenChange(false)
+    setBackgroundPolling(false)
+  }
+
+  const handleDialogClose = () => {
+    handleClose()
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Send STK Push</DialogTitle>
+          <DialogTitle>
+            Send STK Push
+            {backgroundPolling && (
+              <span className="ml-2 inline-flex items-center text-xs text-amber-500">
+                <Bell className="h-3 w-3 mr-1" />
+                Background poll active
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         {/* ── Form Stage ── */}
@@ -478,6 +529,8 @@ function StkPushDialog({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="1000"
+                min={1}
+                max={150000}
               />
             </div>
           </div>
@@ -493,7 +546,7 @@ function StkPushDialog({
                 An M-Pesa prompt has been sent to <strong>{phone}</strong>
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                Checking every 5s · {pollCount}/12 attempts
+                Polling with backoff · {pollCount} attempts
               </p>
             </div>
           </div>
@@ -505,7 +558,9 @@ function StkPushDialog({
             <CheckCircle2 className="h-12 w-12 text-green-500" />
             <div className="text-center">
               <p className="text-lg font-medium text-green-600">Payment Confirmed!</p>
-              <p className="text-sm text-muted-foreground mt-1">KES {parseFloat(amount).toLocaleString()} received</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                KES {parseFloat(amount || "0").toLocaleString()} received
+              </p>
               {receiptNumber && (
                 <p className="text-sm text-muted-foreground mt-1">Receipt: {receiptNumber}</p>
               )}
@@ -525,7 +580,8 @@ function StkPushDialog({
             <div className="text-center">
               <p className="text-lg font-medium text-destructive">Payment Failed</p>
               <p className="text-sm text-muted-foreground mt-1">
-                The transaction could not be completed. The customer may have insufficient funds or the request timed out on Safaricom's side.
+                The transaction could not be completed. The customer may have insufficient funds or the
+                request timed out on Safaricom's side.
               </p>
             </div>
           </div>
@@ -558,11 +614,11 @@ function StkPushDialog({
           )}
           {stage === "waiting" && (
             <Button variant="outline" onClick={handleClose}>
-              Close (will keep checking)
+              Close (background polling continues)
             </Button>
           )}
           {(stage === "success" || stage === "failed" || stage === "cancelled") && (
-            <Button onClick={handleClose}>Done</Button>
+            <Button onClick={() => { resetForm(); onOpenChange(false) }}>Done</Button>
           )}
         </DialogFooter>
       </DialogContent>
